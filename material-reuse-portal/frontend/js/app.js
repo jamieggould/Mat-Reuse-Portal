@@ -195,6 +195,20 @@ RENDER.warehouse = async () => {
       `/api/inventory?userId=${state.user.id}&category=${encodeURIComponent(cat)}&search=${encodeURIComponent(s)}`);
     if (!$('#fCat')) {
       $('#view').innerHTML = `
+        <h3 class="section-title">Online warehouse</h3>
+        <div style="position:relative;">
+  <iframe src="https://mariela66454.softr.app"
+          width="100%" height="1300" frameborder="0"
+          style="border:none; display:block;"></iframe>
+  <div style="position:absolute; bottom:0; left:0;
+              width:210px; height:64px; background:#ffffff;"></div>
+</div>
+        <div class="card" style="margin-top:28px">
+          <h3 style="margin-bottom:6px">📝 Can’t see what you need? Join the wishlist</h3>
+          <p class="small muted" style="margin-bottom:14px">Tell us what you’re after and we’ll let you know when it comes through a strip-out.</p>
+          <iframe class="airtable-embed" src="https://airtable.com/embed/appiHCw9vidbsic9y/pagMtURovTN6nNryp/form?prefill_Status=Active&hide_Status=true" frameborder="0" onmousewheel="" width="100%" height="720" style="background: transparent; border: 1px solid #ccc;"></iframe>
+        </div>
+        <h3 class="section-title" style="margin-top:32px">Member stock view</h3>
         <div class="filters">
           <input id="fSearch" placeholder="Search materials, SKUs, sources…">
           <select id="fCat"><option value="all">All categories</option>
@@ -202,12 +216,7 @@ RENDER.warehouse = async () => {
         </div>
         ${earlyAccessVisible ? '<p class="small" style="margin-bottom:14px"><span class="pill pill-navy">⚡</span> <b>Priority Stock Access on</b> — you can see incoming (Pending) stock before it goes live.</p>'
           : '<p class="small muted" style="margin-bottom:14px">🔒 Incoming (Pending) stock is shown early to members with Priority Stock Access — Domestic Plus Membership and above.</p>'}
-        <div id="whGrid" class="item-grid"></div>
-        <div class="card" style="margin-top:28px">
-          <h3 style="margin-bottom:6px">📝 Can’t see what you need? Join the wishlist</h3>
-          <p class="small muted" style="margin-bottom:14px">Tell us what you’re after and we’ll let you know when it comes through a strip-out.</p>
-          <iframe class="airtable-embed" src="https://airtable.com/embed/appiHCw9vidbsic9y/pagMtURovTN6nNryp/form?prefill_Status=Active&hide_Status=true" frameborder="0" width="100%" height="720" style="background:transparent;border:1px solid #ccc;border-radius:12px"></iframe>
-        </div>`;
+        <div id="whGrid" class="item-grid"></div>`;
       $('#fSearch').addEventListener('input', () => { clearTimeout(window._ft); window._ft = setTimeout(draw, 250); });
       $('#fCat').addEventListener('change', draw);
     }
@@ -455,7 +464,61 @@ RENDER.membership = async () => {
   const { tiers } = await api('/api/tiers');
   const u = state.user;
   $('#view').innerHTML = `
-    <h3 class="section-title">Your membership</h3>
+    <h3 class="section-title">Membership plans</h3>
+<!-- ============================================================
+     Material Reuse — Softr pricing embed
+     Paste this whole block into a WordPress "Custom HTML" block.
+     HOW TO TUNE (only one number usually matters):
+     - --crop  = how tall the visible area is. Raise/lower this so
+                 it ends just after the "Enquire" buttons with a
+                 neat gap. Everything below (incl. the Softr badge)
+                 is hidden.
+     - The white mask at bottom-left is a belt-and-braces cover for
+       the "Made with softr" logo in case it ever peeks through.
+     ============================================================ -->
+<div class="mr-embed">
+  <iframe
+    class="mr-embed__frame"
+    src="https://jonah4725.softr.app/"
+    title="Membership pricing and enquiry"
+    loading="lazy"
+    allow="clipboard-write"
+    referrerpolicy="strict-origin-when-cross-origin">
+  </iframe>
+  <!-- white block that hides the "Made with softr" badge (bottom-left) -->
+  <div class="mr-embed__mask"></div>
+</div>
+<style>
+  .mr-embed {
+    --crop: 1020px;      /* <-- MAIN DIAL: ends just after the Enquire buttons */
+    position: relative;
+    width: 100%;
+    max-width: 1200px;   /* overall width on desktop */
+    height: var(--crop);
+    margin: 0 auto;
+    overflow: hidden;    /* crops off the whitespace + Softr badge below */
+  }
+  .mr-embed__frame {
+    width: 100%;
+    height: 1400px;      /* taller than --crop so the buttons fully render */
+    border: 0;
+    display: block;
+  }
+  .mr-embed__mask {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 240px;        /* covers the bottom-left Softr logo */
+    height: 80px;
+    background: #ffffff;
+    pointer-events: none;
+  }
+  @media (max-width: 600px) {
+    .mr-embed { --crop: 1750px; }   /* columns stack, so it's taller on mobile */
+    .mr-embed__frame { height: 1800px; }
+  }
+</style>
+    <h3 class="section-title" style="margin-top:32px">Your membership</h3>
     <div class="tier-grid">
       ${tiers.map((t) => `
         <div class="tier-card ${t.id === u.tier ? 'current' : ''}">
