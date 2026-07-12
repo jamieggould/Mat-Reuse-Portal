@@ -45,16 +45,13 @@ input, select, textarea { font-family: var(--font-body); }
   background: var(--navy);
   display: flex; align-items: center; justify-content: center; padding: 32px;
 }
+.login-inner { width: 100%; max-width: 620px; }
 .login-card {
-  width: 100%; max-width: 620px; background: #fff; border-radius: 4px;
-  padding: 48px 48px 42px;
+  width: 100%; background: #fff; border-radius: 4px;
+  padding: 42px 48px;
 }
-.login-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
-.login-logo img { width: 48px; height: 48px; flex: none; }
-.wordmark {
-  font-family: var(--font-head); font-weight: 700; font-size: 27px;
-  line-height: .95; letter-spacing: -.01em; color: var(--navy);
-}
+.login-logo { display: flex; justify-content: center; margin-bottom: 30px; }
+.login-logo img { height: 64px; width: auto; max-width: 100%; }
 .login-tag { color: var(--muted); margin: 16px 0 28px; font-size: 13.5px; }
 .login-tag strong { color: var(--navy); }
 .demo-note {
@@ -89,9 +86,8 @@ input, select, textarea { font-family: var(--font-body); }
   background: var(--navy); color: #fff; padding: 30px 0 24px;
   display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
 }
-.side-logo { display: flex; align-items: center; gap: 11px; padding: 0 24px 30px; }
-.side-logo img { width: 34px; height: 34px; flex: none; }
-.side-logo .wordmark { color: #fff; font-size: 16px; }
+.side-logo { display: flex; align-items: center; padding: 0 24px 30px; }
+.side-logo img { height: 44px; width: auto; max-width: 100%; }
 .nav { flex: 1; display: flex; flex-direction: column; }
 .nav button {
   display: flex; align-items: center; width: 100%;
