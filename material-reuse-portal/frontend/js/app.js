@@ -188,41 +188,20 @@ function itemCard(i) {
 }
 
 RENDER.warehouse = async () => {
-  const draw = async () => {
-    const cat = $('#fCat') ? $('#fCat').value : 'all';
-    const s = $('#fSearch') ? $('#fSearch').value : '';
-    const { items, categories, earlyAccessVisible } = await api(
-      `/api/inventory?userId=${state.user.id}&category=${encodeURIComponent(cat)}&search=${encodeURIComponent(s)}`);
-    if (!$('#fCat')) {
-      $('#view').innerHTML = `
-        <h3 class="section-title">Online warehouse</h3>
-        <div style="position:relative;">
+  $('#view').innerHTML = `
+    <h3 class="section-title">Online warehouse</h3>
+    <div style="position:relative;">
   <iframe src="https://mariela66454.softr.app"
           width="100%" height="1300" frameborder="0"
           style="border:none; display:block;"></iframe>
   <div style="position:absolute; bottom:0; left:0;
               width:210px; height:64px; background:#ffffff;"></div>
 </div>
-        <div class="card" style="margin-top:28px">
-          <h3 style="margin-bottom:6px">Can’t see what you need? Join the wishlist</h3>
-          <p class="small muted" style="margin-bottom:14px">Tell us what you’re after and we’ll let you know when it comes through a strip-out.</p>
-          <iframe class="airtable-embed" src="https://airtable.com/embed/appiHCw9vidbsic9y/pagMtURovTN6nNryp/form?prefill_Status=Active&hide_Status=true" frameborder="0" onmousewheel="" width="100%" height="720" style="background: transparent; border: 1px solid #ccc;"></iframe>
-        </div>
-        <h3 class="section-title" style="margin-top:32px">Member stock view</h3>
-        <div class="filters">
-          <input id="fSearch" placeholder="Search materials, SKUs, sources…">
-          <select id="fCat"><option value="all">All categories</option>
-            ${categories.map((c) => `<option>${esc(c)}</option>`).join('')}</select>
-        </div>
-        ${earlyAccessVisible ? '<p class="small" style="margin-bottom:14px"><span class="pill pill-navy">Priority Stock Access</span> You can see incoming (Pending) stock before it goes live.</p>'
-          : '<p class="small muted" style="margin-bottom:14px">Incoming (Pending) stock is shown early to members with Priority Stock Access — Domestic Plus Membership and above.</p>'}
-        <div id="whGrid" class="item-grid"></div>`;
-      $('#fSearch').addEventListener('input', () => { clearTimeout(window._ft); window._ft = setTimeout(draw, 250); });
-      $('#fCat').addEventListener('change', draw);
-    }
-    $('#whGrid').innerHTML = items.length ? items.map(itemCard).join('') : '<div class="empty">No materials match your search.</div>';
-  };
-  await draw();
+    <div class="card" style="margin-top:28px">
+      <h3 style="margin-bottom:6px">Can’t see what you need? Join the wishlist</h3>
+      <p class="small muted" style="margin-bottom:14px">Tell us what you’re after and we’ll let you know when it comes through a strip-out.</p>
+      <iframe class="airtable-embed" src="https://airtable.com/embed/appiHCw9vidbsic9y/pagMtURovTN6nNryp/form?prefill_Status=Active&hide_Status=true" frameborder="0" onmousewheel="" width="100%" height="720" style="background: transparent; border: 1px solid #ccc;"></iframe>
+    </div>`;
 };
 
 /* ---- product passport modal ---- */
@@ -461,7 +440,6 @@ RENDER.projects = async () => {
 
 /* ================= MEMBERSHIP & BILLING ================= */
 RENDER.membership = async () => {
-  const { tiers } = await api('/api/tiers');
   const u = state.user;
   $('#view').innerHTML = `
     <h3 class="section-title">Membership plans</h3>
@@ -518,24 +496,7 @@ RENDER.membership = async () => {
     .mr-embed__frame { height: 1800px; }
   }
 </style>
-    <h3 class="section-title" style="margin-top:32px">Your membership</h3>
-    <div class="tier-grid">
-      ${tiers.map((t) => `
-        <div class="tier-card ${t.id === u.tier ? 'current' : ''}">
-          ${t.id === u.tier ? '<span class="flag pill pill-blue">Current plan</span>' : ''}
-          <h4>${esc(t.name)}</h4>
-          <p class="small muted">${esc(t.tagline)}</p>
-          <div class="price">${t.price === 0 ? '£0.00' : fmtGBP(t.price).replace('.00', '')} <span>${esc(t.billing)}</span></div>
-          <ul>${t.features.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
-          ${t.id === u.tier
-            ? '<button class="btn btn-ghost" disabled>Your plan</button>'
-            : `<a class="btn ${t.id === 'corporate-reuse-partner' ? 'btn-primary' : 'btn-green'}" style="text-align:center;text-decoration:none"
-                 href="mailto:hello@material-reuse.co.uk?subject=${encodeURIComponent('Membership enquiry — ' + t.name)}">Enquire</a>
-               <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="switchTier('${t.id}','${esc(t.name)}')">Preview this tier (demo)</button>`}
-        </div>`).join('')}
-    </div>
-
-    <h3 class="section-title">Billing</h3>
+    <h3 class="section-title" style="margin-top:32px">Billing</h3>
     <div class="grid cols-2">
       <div class="card">
         <h3 style="margin-bottom:10px">Payment</h3>
@@ -552,17 +513,6 @@ RENDER.membership = async () => {
       </div>
     </div>`;
 };
-
-async function switchTier(tierId, tierName) {
-  if (!confirm(`Switch your membership to ${tierName}? (Demo — no payment taken.)`)) return;
-  const { user, tier } = await api('/api/users/' + state.user.id, { method: 'PATCH', body: { tier: tierId } });
-  state.user = user; state.tier = tier;
-  $('#tierBadge').textContent = tier.name;
-  $('#tierBadge').className = 'tier-badge tier-' + tier.id;
-  renderNav();
-  toast(`Membership switched to ${tier.name}`);
-  go('membership');
-}
 
 /* ================= SETTINGS ================= */
 RENDER.settings = async () => {
