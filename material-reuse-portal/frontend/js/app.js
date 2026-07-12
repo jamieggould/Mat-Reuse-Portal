@@ -56,7 +56,6 @@ async function login(id) {
   state.user = user; state.tier = tier;
   $('#login').style.display = 'none';
   $('#shell').classList.add('active');
-  $('#topAvatar').textContent = user.avatarInitials;
   $('#tierBadge').textContent = tier.name;
   $('#tierBadge').className = 'tier-badge tier-' + tier.id;
   renderNav();
@@ -556,7 +555,6 @@ async function saveProfile() {
                  organisation: $('#sOrg').value || null, address: $('#sAddr').value };
   const { user } = await api('/api/users/' + state.user.id, { method: 'PATCH', body });
   state.user = user;
-  $('#topAvatar').textContent = user.avatarInitials;
   toast('Profile saved');
 }
 
