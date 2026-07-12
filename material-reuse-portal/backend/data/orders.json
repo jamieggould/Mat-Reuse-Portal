@@ -1,0 +1,135 @@
+{
+  "orders": [
+    {
+      "id": "ORD-2026-1188",
+      "userId": "u1",
+      "placed": "2026-07-06",
+      "status": "Ready for collection",
+      "fulfilment": "Collection — Central London facility",
+      "slot": "2026-07-15, 10:00–12:00",
+      "items": [
+        { "sku": "MR-SN-0533", "title": "Stainless Steel Sink & Drainer Unit", "qty": 1, "price": 22.0 }
+      ],
+      "total": 22.0,
+      "carbonSavedKg": 27.6
+    },
+    {
+      "id": "ORD-2026-1102",
+      "userId": "u1",
+      "placed": "2026-05-19",
+      "status": "Collected",
+      "fulfilment": "Collection — Central London facility",
+      "slot": "2026-05-23, 14:00–16:00",
+      "items": [
+        { "sku": "MR-BR-0502", "title": "London Stock Bricks (pallet of 400)", "qty": 1, "price": 440.0 }
+      ],
+      "total": 440.0,
+      "carbonSavedKg": 18.6
+    },
+    {
+      "id": "ORD-2026-1201",
+      "userId": "u2",
+      "placed": "2026-07-09",
+      "status": "Reserved",
+      "fulfilment": "Delivery — SE22 (zone 2)",
+      "slot": "2026-07-17, AM window",
+      "items": [
+        { "sku": "MR-RD-0577", "title": "Column Radiators 600 × 1000mm", "qty": 3, "price": 48.0 },
+        { "sku": "MR-DR-0203", "title": "Solid Oak Veneer Internal Door FD30", "qty": 2, "price": 45.0 }
+      ],
+      "total": 234.0,
+      "deliveryFee": 35.0,
+      "carbonSavedKg": 229.6
+    },
+    {
+      "id": "ORD-2026-1140",
+      "userId": "u2",
+      "placed": "2026-06-11",
+      "status": "Delivered",
+      "fulfilment": "Delivery — SE22 (zone 2)",
+      "slot": "2026-06-15, PM window",
+      "items": [
+        { "sku": "MR-TM-0491", "title": "Reclaimed C24 Joists 4.8m", "qty": 12, "price": 14.0 }
+      ],
+      "total": 168.0,
+      "deliveryFee": 35.0,
+      "carbonSavedKg": 122.4
+    },
+    {
+      "id": "ORD-2026-1196",
+      "userId": "u3",
+      "placed": "2026-07-08",
+      "status": "Awaiting collection",
+      "fulfilment": "Volunteer collection slot",
+      "slot": "2026-07-14, 09:00–11:00",
+      "items": [
+        { "sku": "MR-CT-0117", "title": "Anthracite Carpet Tiles 500 × 500mm", "qty": 180, "price": 1.8 },
+        { "sku": "MR-FN-0388", "title": "Vitra .03 Stacking Chairs", "qty": 20, "price": 28.0 }
+      ],
+      "total": 884.0,
+      "memberDiscount": 44.2,
+      "carbonSavedKg": 782.4
+    },
+    {
+      "id": "ORD-2026-1129",
+      "userId": "u3",
+      "placed": "2026-06-02",
+      "status": "Collected",
+      "fulfilment": "Volunteer collection slot",
+      "slot": "2026-06-06, 09:00–11:00",
+      "items": [
+        { "sku": "MR-LT-0341", "title": "LED Recessed Panel Lights", "qty": 14, "price": 12.5 },
+        { "sku": "MR-CL-0455", "title": "Mineral Fibre Ceiling Tiles", "qty": 200, "price": 0.9 }
+      ],
+      "total": 355.0,
+      "memberDiscount": 17.75,
+      "carbonSavedKg": 462.6
+    },
+    {
+      "id": "ORD-2026-1210",
+      "userId": "u4",
+      "placed": "2026-07-11",
+      "status": "Reserved",
+      "fulfilment": "Delivery — EC2 (crane offload)",
+      "slot": "2026-07-21, booked with site team",
+      "items": [
+        { "sku": "MR-PV-0608", "title": "Raised Access Floor Panels", "qty": 600, "price": 3.2 },
+        { "sku": "MR-GL-0468", "title": "Toughened Glass Partition Panels", "qty": 18, "price": 65.0 }
+      ],
+      "total": 3090.0,
+      "memberDiscount": 154.5,
+      "carbonSavedKg": 6925.8
+    },
+    {
+      "id": "DON-2026-0344",
+      "userId": "u4",
+      "type": "donation",
+      "placed": "2026-06-26",
+      "status": "Passports issued",
+      "fulfilment": "Strip-out — 88 Leadenhall St, Floors 3–5 (Lawmens)",
+      "slot": "Completed 2026-06-28",
+      "items": [
+        { "sku": "MR-CT-0117", "title": "Anthracite Carpet Tiles 500 × 500mm", "qty": 500, "price": 0 },
+        { "sku": "MR-CL-0455", "title": "Mineral Fibre Ceiling Tiles", "qty": 940, "price": 0 }
+      ],
+      "total": 0,
+      "carbonSavedKg": 2118.0,
+      "note": "Donation lot — 1,440 items diverted from waste stream. Verified carbon credit pending (Alphacello)."
+    },
+    {
+      "id": "DON-2026-0361",
+      "userId": "u4",
+      "type": "donation",
+      "placed": "2026-07-11",
+      "status": "Logged — emission assessment",
+      "fulfilment": "Strip-out — Moorgate EC2 (Lawmens)",
+      "slot": "Collection scheduled 2026-07-15",
+      "items": [
+        { "sku": "MR-PV-0608", "title": "Raised Access Floor Panels", "qty": 1150, "price": 0 }
+      ],
+      "total": 0,
+      "carbonSavedKg": 10235.0,
+      "note": "Donation lot in lifecycle stage: Emission Assessment → Store."
+    }
+  ]
+}

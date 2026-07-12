@@ -1,0 +1,77 @@
+{
+  "carbon": {
+    "u1": {
+      "totalSavedKg": 46.2,
+      "equivalents": { "treeYears": 2.1, "carMiles": 115, "flightsLHRtoEDI": 0.4 },
+      "monthly": [
+        { "month": "2026-03", "kg": 0 },
+        { "month": "2026-04", "kg": 0 },
+        { "month": "2026-05", "kg": 18.6 },
+        { "month": "2026-06", "kg": 0 },
+        { "month": "2026-07", "kg": 27.6 }
+      ],
+      "byCategory": [
+        { "category": "Kitchens & Sanitaryware", "kg": 27.6 },
+        { "category": "Masonry & Aggregates", "kg": 18.6 }
+      ]
+    },
+    "u2": {
+      "totalSavedKg": 312.8,
+      "equivalents": { "treeYears": 14.2, "carMiles": 780, "flightsLHRtoEDI": 2.6 },
+      "monthly": [
+        { "month": "2026-02", "kg": 24.0 },
+        { "month": "2026-03", "kg": 41.5 },
+        { "month": "2026-04", "kg": 0 },
+        { "month": "2026-05", "kg": 61.3 },
+        { "month": "2026-06", "kg": 122.4 },
+        { "month": "2026-07", "kg": 63.6 }
+      ],
+      "byCategory": [
+        { "category": "Timber & Structure", "kg": 146.4 },
+        { "category": "Heating & Plumbing", "kg": 104.4 },
+        { "category": "Doors & Joinery", "kg": 62.0 }
+      ]
+    },
+    "u3": {
+      "totalSavedKg": 2140.5,
+      "equivalents": { "treeYears": 97.3, "carMiles": 5340, "flightsLHRtoEDI": 17.8 },
+      "monthly": [
+        { "month": "2026-02", "kg": 188.0 },
+        { "month": "2026-03", "kg": 244.9 },
+        { "month": "2026-04", "kg": 310.2 },
+        { "month": "2026-05", "kg": 152.4 },
+        { "month": "2026-06", "kg": 462.6 },
+        { "month": "2026-07", "kg": 782.4 }
+      ],
+      "byCategory": [
+        { "category": "Flooring", "kg": 712.8 },
+        { "category": "Furniture", "kg": 594.0 },
+        { "category": "Lighting & Electrical", "kg": 445.2 },
+        { "category": "Ceilings & Partitions", "kg": 388.5 }
+      ]
+    },
+    "u4": {
+      "totalSavedKg": 48720.0,
+      "verified": true,
+      "verifier": "Alphacello — carbon traceability partner",
+      "equivalents": { "treeYears": 2214.5, "carMiles": 121800, "flightsLHRtoEDI": 406 },
+      "monthly": [
+        { "month": "2026-02", "kg": 4820.0 },
+        { "month": "2026-03", "kg": 6110.0 },
+        { "month": "2026-04", "kg": 7245.0 },
+        { "month": "2026-05", "kg": 5980.0 },
+        { "month": "2026-06", "kg": 11205.0 },
+        { "month": "2026-07", "kg": 13360.0 }
+      ],
+      "byCategory": [
+        { "category": "Flooring", "kg": 14730.0 },
+        { "category": "Ceilings & Partitions", "kg": 9840.0 },
+        { "category": "Furniture", "kg": 8925.0 },
+        { "category": "Windows & Glazing", "kg": 7960.0 },
+        { "category": "Lighting & Electrical", "kg": 4310.0 },
+        { "category": "Other", "kg": 2955.0 }
+      ],
+      "wlcaModules": { "A1-A3 avoided": 41250.0, "A4 transport": -1830.0, "D benefits": 9300.0 }
+    }
+  }
+}

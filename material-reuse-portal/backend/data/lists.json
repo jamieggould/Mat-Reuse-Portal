@@ -1,0 +1,69 @@
+{
+  "lists": [
+    {
+      "id": "L-101",
+      "userId": "u1",
+      "name": "Garden studio build",
+      "created": "2026-06-20",
+      "items": [
+        { "sku": "MR-TM-0491", "qty": 20 },
+        { "sku": "MR-WD-0590", "qty": 2 },
+        { "sku": "MR-RF-0561", "qty": 300 }
+      ]
+    },
+    {
+      "id": "L-201",
+      "userId": "u2",
+      "name": "Loft conversion",
+      "created": "2026-05-28",
+      "items": [
+        { "sku": "MR-TM-0491", "qty": 16 },
+        { "sku": "MR-RD-0577", "qty": 2 },
+        { "sku": "MR-DR-0203", "qty": 3 }
+      ]
+    },
+    {
+      "id": "L-202",
+      "userId": "u2",
+      "name": "Kitchen refresh",
+      "created": "2026-07-04",
+      "items": [
+        { "sku": "MR-SN-0533", "qty": 1 },
+        { "sku": "MR-LT-0341", "qty": 4 }
+      ]
+    },
+    {
+      "id": "L-301",
+      "userId": "u3",
+      "name": "Workshop refit — Copeland Park",
+      "created": "2026-06-14",
+      "items": [
+        { "sku": "MR-CT-0117", "qty": 180 },
+        { "sku": "MR-FN-0388", "qty": 20 },
+        { "sku": "MR-LT-0341", "qty": 10 }
+      ]
+    },
+    {
+      "id": "L-302",
+      "userId": "u3",
+      "name": "Community hall stage",
+      "created": "2026-07-09",
+      "items": [
+        { "sku": "MR-TM-0491", "qty": 30 },
+        { "sku": "MR-PV-0608", "qty": 60 }
+      ]
+    },
+    {
+      "id": "L-401",
+      "userId": "u4",
+      "name": "Angel Court L12 fit-out spec",
+      "created": "2026-07-02",
+      "items": [
+        { "sku": "MR-PV-0608", "qty": 600 },
+        { "sku": "MR-GL-0468", "qty": 18 },
+        { "sku": "MR-FN-0402", "qty": 30 },
+        { "sku": "MR-LT-0341", "qty": 40 }
+      ]
+    }
+  ]
+}

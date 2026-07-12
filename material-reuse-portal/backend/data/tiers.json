@@ -1,0 +1,113 @@
+{
+  "tiers": [
+    {
+      "id": "domestic-free",
+      "name": "Domestic Free",
+      "price": 0,
+      "billing": "free forever",
+      "colour": "#E5FFCF",
+      "tagline": "Browse the online warehouse and start your reuse journey.",
+      "features": [
+        "Browse the live online warehouse",
+        "View product passports & carbon data",
+        "1 project shopping list",
+        "Collection from our central London facility",
+        "Monthly reuse newsletter"
+      ],
+      "gates": {
+        "shoppingListLimit": 1,
+        "reservations": false,
+        "earlyAccess": false,
+        "carbonReports": false,
+        "projects": false,
+        "audits": false,
+        "memberDiscount": 0,
+        "accountManager": false,
+        "delivery": false
+      }
+    },
+    {
+      "id": "domestic-plus",
+      "name": "Domestic Plus",
+      "price": 7,
+      "billing": "per month",
+      "colour": "#9EFF51",
+      "tagline": "Early access, reservations and your personal carbon story.",
+      "features": [
+        "Everything in Domestic Free",
+        "48-hour early access to new stock",
+        "Reserve items before collection",
+        "Unlimited project shopping lists",
+        "Personal carbon savings dashboard",
+        "Delivery available (London zones 1–6)"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "reservations": true,
+        "earlyAccess": true,
+        "carbonReports": "personal",
+        "projects": false,
+        "audits": false,
+        "memberDiscount": 0,
+        "accountManager": false,
+        "delivery": true
+      }
+    },
+    {
+      "id": "community",
+      "name": "Community",
+      "price": 29,
+      "billing": "per month",
+      "colour": "#FFED4D",
+      "tagline": "For community groups, schools, charities and makerspaces.",
+      "features": [
+        "Everything in Domestic Plus",
+        "Community project workspace",
+        "Downloadable carbon savings reports",
+        "Priority reservations on bulk lots",
+        "Discounted delivery & volunteer collection slots",
+        "Named on our community reuse wall"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "reservations": true,
+        "earlyAccess": true,
+        "carbonReports": "full",
+        "projects": true,
+        "audits": false,
+        "memberDiscount": 5,
+        "accountManager": false,
+        "delivery": true
+      }
+    },
+    {
+      "id": "corporate-reuse-partner",
+      "name": "Corporate Reuse Partner",
+      "price": 249,
+      "billing": "per month",
+      "colour": "#1653F3",
+      "tagline": "Donate, specify and report — full circular economy partnership.",
+      "features": [
+        "Everything in Community",
+        "GLA-compliant pre-demolition audits",
+        "Resource management plans & circular economy statements",
+        "Product passports for every donated item",
+        "WLCA / LCA data & BREEAM / Ska credit support",
+        "Verified carbon reporting via Alphacello",
+        "5% partner discount with Lawmens strip-out",
+        "Dedicated account manager"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "reservations": true,
+        "earlyAccess": true,
+        "carbonReports": "verified",
+        "projects": true,
+        "audits": true,
+        "memberDiscount": 5,
+        "accountManager": true,
+        "delivery": true
+      }
+    }
+  ]
+}
