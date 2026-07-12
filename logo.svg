@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- material reuse — segmented ring mark, hi-vis green -->
+  <g fill="none" stroke-width="8.6" stroke-linecap="round">
+    <path d="M38.77 21.39 A15 15 0 0 0 27.88 9.51" stroke="#9EFF51"/>
+    <path d="M21.40 9.23 A15 15 0 0 0 9.51 20.12" stroke="#7ED63E"/>
+    <path d="M9.23 26.60 A15 15 0 0 0 20.12 38.49" stroke="#5DBB2B"/>
+    <path d="M26.60 38.77 A15 15 0 0 0 38.49 27.88" stroke="#8BEA47"/>
+  </g>
+</svg>
