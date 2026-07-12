@@ -122,6 +122,8 @@ input, select, textarea { font-family: var(--font-body); }
 .tier-domestic-plus { background: var(--green); color: var(--navy); }
 .tier-community { background: var(--yellow); color: var(--navy); }
 .tier-corporate-reuse-partner { background: var(--azul); color: #fff; }
+/* topbar badge — always the house navy, whatever the tier */
+.top-right .tier-badge { background: var(--navy); color: #fff; border: 0; }
 
 .avatar {
   width: 38px; height: 38px; border-radius: 2px;
