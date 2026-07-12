@@ -74,7 +74,6 @@ const PAGES = [
   { id: 'warehouse', label: 'Online Warehouse' },
   { id: 'orders', label: 'Orders & Collections' },
   { id: 'lists', label: 'Shopping Lists' },
-  { id: 'carbon', label: 'Carbon Reporting', gate: (g) => g.carbonReports },
   { id: 'projects', label: 'Projects & Audits', gate: (g) => g.projects },
   { id: 'membership', label: 'Membership & Billing' },
   { id: 'settings', label: 'Account Settings' },
@@ -113,14 +112,13 @@ const RENDER = {};
 
 RENDER.dashboard = async () => {
   const u = state.user, g = state.tier.gates;
-  const [inv, ord, lst, prj] = await Promise.all([
-    api('/api/inventory?userId=' + u.id),
+  const [ord, lst, prj, crb] = await Promise.all([
     api('/api/orders?userId=' + u.id),
     api('/api/lists?userId=' + u.id),
     g.projects ? api('/api/projects?userId=' + u.id) : Promise.resolve({ projects: [] }),
+    g.carbonReports ? api('/api/carbon?userId=' + u.id) : Promise.resolve(null),
   ]);
   const active = ord.orders.filter((o) => !['Collected', 'Delivered', 'Passports issued'].includes(o.status));
-  const newest = [...inv.items].sort((a, b) => b.dateAdded.localeCompare(a.dateAdded)).slice(0, 4);
 
   $('#view').innerHTML = `
     <div class="tagline-strip">
@@ -143,9 +141,6 @@ RENDER.dashboard = async () => {
         <div class="sub">${g.shoppingListLimit === null ? 'Unlimited on your plan' : `${lst.lists.length} of ${g.shoppingListLimit} on Domestic Free Membership`}</div></div>
     </div>
 
-    <h3 class="section-title">New in the warehouse ${inv.earlyAccessVisible ? '<span class="pill pill-green">Priority stock access active</span>' : ''}</h3>
-    <div class="item-grid">${newest.map(itemCard).join('')}</div>
-
     <div class="grid cols-2" style="margin-top:28px">
       <div class="card">
         <h3 style="margin-bottom:12px">Next collections & deliveries</h3>
@@ -164,7 +159,9 @@ RENDER.dashboard = async () => {
           : `<p class="small muted" style="margin-bottom:14px">Every reused item keeps embodied carbon locked in and materials out of landfill. Upgrade to unlock carbon reports, project workspaces and more.</p>
              <button class="btn btn-primary btn-sm" onclick="go('membership')">Explore membership tiers</button>`}
       </div>
-    </div>`;
+    </div>
+
+    ${crb ? carbonSection(crb.report, g) : ''}`;
 };
 
 /* ================= WAREHOUSE ================= */
@@ -348,19 +345,14 @@ async function removeFromList(listId, sku) {
   go('lists');
 }
 
-/* ================= CARBON ================= */
-RENDER.carbon = async () => {
-  const g = state.tier.gates;
-  if (!g.carbonReports) {
-    $('#view').innerHTML = upgradeNote('Carbon reporting', 'Domestic Plus Membership');
-    return;
-  }
-  const { report: r } = await api('/api/carbon?userId=' + state.user.id);
+/* ================= CARBON (shown on the dashboard) ================= */
+function carbonSection(r, g) {
   const max = Math.max(...r.monthly.map((m) => m.kg), 1);
   const maxCat = Math.max(...r.byCategory.map((c) => c.kg), 1);
   const monthName = (m) => new Date(m + '-01').toLocaleDateString('en-GB', { month: 'short' });
 
-  $('#view').innerHTML = `
+  return `
+    <h3 class="section-title" style="margin-top:32px">Carbon reporting</h3>
     <div class="grid cols-3">
       <div class="card stat"><span class="stripe" style="background:var(--green)"></span>
         <div class="lbl">Total CO₂e avoided</div><div class="big">${fmtKg(r.totalSavedKg)}</div>
@@ -405,7 +397,7 @@ RENDER.carbon = async () => {
         ? `<button class="btn btn-primary" onclick="toast('Report queued — a PDF will land in your inbox shortly')">Download ${g.carbonReports === 'verified' ? 'verified' : ''} carbon report (PDF)</button>`
         : `<button class="btn btn-ghost" disabled>Downloadable reports — Community tier and above</button>`}
     </div>`;
-};
+}
 
 /* ================= PROJECTS & AUDITS ================= */
 RENDER.projects = async () => {
