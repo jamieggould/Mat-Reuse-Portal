@@ -1,0 +1,79 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "name": "Maya Okafor",
+      "email": "maya.okafor@example.com",
+      "tier": "domestic-free",
+      "memberSince": "2026-03-14",
+      "avatarInitials": "MO",
+      "organisation": null,
+      "phone": "07700 900123",
+      "address": "42 Fernhead Road, London W9 3EL",
+      "carbonSavedKg": 46.2,
+      "itemsRehomed": 6,
+      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": true },
+      "billing": { "method": null, "nextPayment": null, "invoices": [] }
+    },
+    {
+      "id": "u2",
+      "name": "Tom Hartley",
+      "email": "tom.hartley@example.com",
+      "tier": "domestic-plus",
+      "memberSince": "2025-11-02",
+      "avatarInitials": "TH",
+      "organisation": null,
+      "phone": "07700 900456",
+      "address": "18 Cressington Grove, London SE22 8PF",
+      "carbonSavedKg": 312.8,
+      "itemsRehomed": 41,
+      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": false },
+      "billing": {
+        "method": "Visa •••• 4821",
+        "nextPayment": "2026-11-02",
+        "invoices": [
+          { "id": "INV-2025-1102", "date": "2025-11-02", "amount": 500.0, "status": "Paid", "desc": "Domestic Plus Membership — Annual (Nov 2025 – Nov 2026)" }
+        ]
+      }
+    },
+    {
+      "id": "u3",
+      "name": "Priya Nair",
+      "email": "priya@peckhamtoolibrary.org",
+      "tier": "community",
+      "memberSince": "2025-09-18",
+      "avatarInitials": "PN",
+      "organisation": "Peckham Tool Library CIC",
+      "phone": "020 7946 0321",
+      "address": "Unit 4, Copeland Park, 133 Copeland Road, London SE15 3SN",
+      "carbonSavedKg": 2140.5,
+      "itemsRehomed": 287,
+      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": true },
+      "billing": { "method": null, "nextPayment": null, "invoices": [] }
+    },
+    {
+      "id": "u4",
+      "name": "Daniel Whitmore",
+      "email": "d.whitmore@garnetfieldworkspace.co.uk",
+      "tier": "corporate-reuse-partner",
+      "memberSince": "2025-06-30",
+      "avatarInitials": "DW",
+      "organisation": "Garnetfield Workspace Group",
+      "phone": "020 3011 8890",
+      "address": "Level 12, 1 Angel Court, London EC2R 7HJ",
+      "carbonSavedKg": 48720.0,
+      "itemsRehomed": 3860,
+      "accountManager": { "name": "Ellie Marsh", "email": "hello@material-reuse.co.uk", "phone": "01932 867989" },
+      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": true },
+      "billing": {
+        "method": "Invoice — 30 day terms (PO required)",
+        "nextPayment": "2027-06-30",
+        "invoices": [
+          { "id": "INV-2026-0655", "date": "2026-06-30", "amount": 10000.0, "status": "Paid", "desc": "Corporate Reuse Partnership — Annual (Jun 2026 – Jun 2027)" },
+          { "id": "INV-2026-0641", "date": "2026-06-12", "amount": 1850.0, "status": "Paid", "desc": "Pre-refurbishment audit — Angel Court (Floors 10–12)" },
+          { "id": "INV-2026-0512", "date": "2026-05-21", "amount": 640.0, "status": "Overdue", "desc": "Verified carbon report — Q1 2026 donations" }
+        ]
+      }
+    }
+  ]
+}

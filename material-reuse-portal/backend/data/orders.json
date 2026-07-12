@@ -1,0 +1,130 @@
+{
+  "orders": [
+    {
+      "id": "ORD-2026-1102",
+      "userId": "u1",
+      "placed": "2026-05-19",
+      "status": "Collected",
+      "fulfilment": "Collection Only — Material Reuse warehouse",
+      "slot": "2026-05-23, 14:00–16:00",
+      "items": [
+        { "sku": "MR-0001", "title": "Chrome Plug Sockets", "qty": 2, "price": 8.0 },
+        { "sku": "MR-0003", "title": "Music Note Art Design", "qty": 1, "price": 38.0 }
+      ],
+      "total": 54.0,
+      "carbonSavedKg": 14.0
+    },
+    {
+      "id": "ORD-2026-1201",
+      "userId": "u2",
+      "placed": "2026-07-09",
+      "status": "Reserved",
+      "fulfilment": "Available For Delivery — SE22",
+      "slot": "2026-07-17, AM window",
+      "items": [
+        { "sku": "MR-0027", "title": "Mirrors X2", "qty": 2, "price": 19.0 }
+      ],
+      "total": 36.1,
+      "memberDiscount": 1.9,
+      "deliveryFee": 35.0,
+      "carbonSavedKg": 30.0
+    },
+    {
+      "id": "ORD-2026-1140",
+      "userId": "u2",
+      "placed": "2026-06-11",
+      "status": "Delivered",
+      "fulfilment": "Available For Delivery — SE22",
+      "slot": "2026-06-15, PM window",
+      "items": [
+        { "sku": "MR-0005", "title": "JBL Speakers", "qty": 2, "price": 50.0 }
+      ],
+      "total": 95.0,
+      "memberDiscount": 5.0,
+      "deliveryFee": 35.0,
+      "carbonSavedKg": 60.0
+    },
+    {
+      "id": "ORD-2026-1196",
+      "userId": "u3",
+      "placed": "2026-07-08",
+      "status": "Awaiting collection",
+      "fulfilment": "Collection Only — Material Reuse warehouse",
+      "slot": "2026-07-14, 09:00–11:00",
+      "items": [
+        { "sku": "MR-0035", "title": "Orange Stools", "qty": 14, "price": 19.0 },
+        { "sku": "MR-0036", "title": "Hanging Storage", "qty": 3, "price": 38.0 }
+      ],
+      "total": 361.0,
+      "memberDiscount": 19.0,
+      "carbonSavedKg": 440.0
+    },
+    {
+      "id": "ORD-2026-1129",
+      "userId": "u3",
+      "placed": "2026-06-02",
+      "status": "Collected",
+      "fulfilment": "Collection Only — Material Reuse warehouse",
+      "slot": "2026-06-06, 09:00–11:00",
+      "items": [
+        { "sku": "MR-0034", "title": "Hanging Black Tube Lights", "qty": 10, "price": 25.0 },
+        { "sku": "MR-0050", "title": "Lights", "qty": 5, "price": 15.0 }
+      ],
+      "total": 308.75,
+      "memberDiscount": 16.25,
+      "carbonSavedKg": 170.0
+    },
+    {
+      "id": "ORD-2026-1210",
+      "userId": "u4",
+      "placed": "2026-07-11",
+      "status": "Reserved",
+      "fulfilment": "Available For Delivery — EC2",
+      "slot": "2026-07-21, booked with site team",
+      "items": [
+        { "sku": "MR-0031", "title": "Kitchen Tea Point", "qty": 2, "price": 190.0 },
+        { "sku": "MR-0030", "title": "Purple Booth Seating", "qty": 1, "price": 150.0 },
+        { "sku": "MR-0045", "title": "Verco Office Chairs", "qty": 6, "price": 44.0 }
+      ],
+      "total": 754.3,
+      "memberDiscount": 39.7,
+      "carbonSavedKg": 690.0
+    },
+    {
+      "id": "DON-2026-0344",
+      "userId": "u4",
+      "type": "donation",
+      "placed": "2026-06-26",
+      "status": "Passports issued",
+      "fulfilment": "Office strip-out — Angel Court EC2, Floors 10–12",
+      "slot": "Completed 2026-06-28",
+      "items": [
+        { "sku": "MR-0017", "title": "Roller Racking", "qty": 2, "price": 0 },
+        { "sku": "MR-0022", "title": "Metal Comms Unit", "qty": 1, "price": 0 },
+        { "sku": "MR-0019", "title": "Beko Freezer", "qty": 1, "price": 0 }
+      ],
+      "total": 0,
+      "carbonSavedKg": 570.0,
+      "note": "Donation lot — items now in the online warehouse as Pending while passports are finalised."
+    },
+    {
+      "id": "DON-2026-0361",
+      "userId": "u4",
+      "type": "donation",
+      "placed": "2026-07-11",
+      "status": "Logged — emission assessment",
+      "fulfilment": "Office strip-out — Angel Court EC2, Level 12",
+      "slot": "Collection scheduled 2026-07-15",
+      "items": [
+        { "sku": "MR-0018", "title": "Disabled Toilet - Ground Floor", "qty": 1, "price": 0 },
+        { "sku": "MR-0020", "title": "Disabled Toilet - Level 2", "qty": 1, "price": 0 },
+        { "sku": "MR-0021", "title": "Toilets", "qty": 1, "price": 0 },
+        { "sku": "MR-0013", "title": "Gym Mirrors", "qty": 1, "price": 0 },
+        { "sku": "MR-0014", "title": "Radiators", "qty": 1, "price": 0 }
+      ],
+      "total": 0,
+      "carbonSavedKg": 350.0,
+      "note": "Donation lot in lifecycle stage: emission assessment → store."
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "_source": "Pricing, tier names and feature matrix taken directly from the live Material Reuse membership table (Softr embed, material-reuse.co.uk). Do not edit without checking the live table.",
+  "tiers": [
+    {
+      "id": "domestic-free",
+      "name": "Domestic Free Membership",
+      "price": 0,
+      "billing": "Annual",
+      "colour": "#E5FFCF",
+      "tagline": "Access reclaimed materials with trusted trade teams and delivery & logistics.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Trusted Trade Teams",
+        "Delivery and Logistics"
+      ],
+      "gates": {
+        "shoppingListLimit": 1,
+        "reservations": false,
+        "earlyAccess": false,
+        "materialSourcing": false,
+        "carbonReports": false,
+        "projects": false,
+        "audits": false,
+        "memberDiscount": 0,
+        "accountManager": false,
+        "delivery": true
+      }
+    },
+    {
+      "id": "domestic-plus",
+      "name": "Domestic Plus Membership",
+      "price": 500,
+      "billing": "Annual",
+      "colour": "#9EFF51",
+      "tagline": "Priority stock access, member discounts and material sourcing on top of the essentials.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Trusted Trade Teams",
+        "Delivery and Logistics",
+        "Priority Stock Access",
+        "Member Discounts",
+        "Material Sourcing"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "reservations": true,
+        "earlyAccess": true,
+        "materialSourcing": true,
+        "carbonReports": "personal",
+        "projects": false,
+        "audits": false,
+        "memberDiscount": 5,
+        "accountManager": false,
+        "delivery": true
+      }
+    },
+    {
+      "id": "community",
+      "name": "Community Free Membership",
+      "price": 0,
+      "billing": "Annual",
+      "colour": "#FFED4D",
+      "tagline": "Everything in Domestic Plus, plus community project support — free for community groups.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Trusted Trade Teams",
+        "Delivery and Logistics",
+        "Priority Stock Access",
+        "Member Discounts",
+        "Material Sourcing",
+        "Community Project Support"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "reservations": true,
+        "earlyAccess": true,
+        "materialSourcing": true,
+        "carbonReports": "full",
+        "projects": true,
+        "audits": false,
+        "memberDiscount": 5,
+        "accountManager": false,
+        "delivery": true
+      }
+    },
+    {
+      "id": "corporate-reuse-partner",
+      "name": "Corporate Reuse Partnership",
+      "price": 10000,
+      "billing": "Annual",
+      "colour": "#1653F3",
+      "tagline": "Full circular economy partnership — audits, ESG & carbon reporting and a dedicated account manager.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Trusted Trade Teams",
+        "Delivery and Logistics",
+        "Priority Stock Access",
+        "Member Discounts",
+        "Material Sourcing",
+        "Community Project Support",
+        "Pre Refurbishment Audits",
+        "Circular Economy Reports",
+        "ESG and Carbon Reporting",
+        "Website Partner Listing",
+        "Dedicated Account Manager"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "reservations": true,
+        "earlyAccess": true,
+        "materialSourcing": true,
+        "carbonReports": "verified",
+        "projects": true,
+        "audits": true,
+        "memberDiscount": 5,
+        "accountManager": true,
+        "delivery": true
+      }
+    }
+  ]
+}
