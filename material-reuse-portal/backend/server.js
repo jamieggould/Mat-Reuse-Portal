@@ -35,9 +35,22 @@ const save = (f, body) =>
   fs.writeFileSync(path.join(DATA_DIR, f), JSON.stringify(body, null, 2));
 const saveUsers = () => save('users.json', { users: db.users });
 const saveCarbon = () => save('carbon.json', { carbon: db.carbon });
+const saveOrders = () => save('orders.json', { orders: db.orders });
+const saveLists = () => save('lists.json', { lists: db.lists });
+const saveProjects = () => save('projects.json', { projects: db.projects });
 
-let orderSeq = 1300;
-let listSeq = 500;
+let orderSeq = db.orders.reduce((m, o) => {
+  const n = /^ORD-\d+-(\d+)$/.exec(o.id);
+  return n ? Math.max(m, +n[1]) : m;
+}, 1299) + 1;
+let listSeq = db.lists.reduce((m, l) => {
+  const n = /^L-(\d+)$/.exec(l.id);
+  return n ? Math.max(m, +n[1]) : m;
+}, 499) + 1;
+let projectSeq = db.projects.reduce((m, p) => {
+  const n = /^PRJ-(\d+)$/.exec(p.id);
+  return n ? Math.max(m, +n[1]) : m;
+}, 5000) + 1;
 let userSeq = db.users.reduce((m, u) => {
   const n = /^u(\d+)$/.exec(u.id);
   return n ? Math.max(m, +n[1]) : m;
@@ -193,10 +206,110 @@ async function api(req, res, url) {
       return json(res, 201, { user: safeUser(u) });
     }
 
+    // ----- orders (admin can log/edit anything a member sees) -----
+    if (parts[2] === 'orders' && parts[3]) {
+      const order = db.orders.find((o) => o.id === parts[3]);
+      if (!order) return json(res, 404, { error: 'Order not found' });
+      if (req.method === 'PATCH') {
+        const b = await readBody(req);
+        ['type', 'placed', 'status', 'fulfilment', 'slot', 'total', 'memberDiscount',
+         'deliveryFee', 'carbonSavedKg', 'note'].forEach((k) => {
+          if (b[k] !== undefined) order[k] = b[k];
+        });
+        if (Array.isArray(b.items)) order.items = b.items;
+        saveOrders();
+        return json(res, 200, { order });
+      }
+      if (req.method === 'DELETE') {
+        db.orders = db.orders.filter((o) => o.id !== order.id);
+        saveOrders();
+        return json(res, 200, { ok: true });
+      }
+    }
+
+    // ----- projects & audits -----
+    if (parts[2] === 'projects' && parts[3]) {
+      const p = db.projects.find((x) => x.id === parts[3]);
+      if (!p) return json(res, 404, { error: 'Project not found' });
+      if (req.method === 'PATCH') {
+        const b = await readBody(req);
+        ['name', 'type', 'status', 'auditRef', 'started', 'target', 'summary',
+         'carbonSavedKg', 'linkedList'].forEach((k) => {
+          if (b[k] !== undefined) p[k] = b[k];
+        });
+        if (b.progress !== undefined) p.progress = Math.max(0, Math.min(100, +b.progress || 0));
+        if (Array.isArray(b.documents)) p.documents = b.documents;
+        saveProjects();
+        return json(res, 200, { project: p });
+      }
+      if (req.method === 'DELETE') {
+        db.projects = db.projects.filter((x) => x.id !== p.id);
+        saveProjects();
+        return json(res, 200, { ok: true });
+      }
+    }
+
     // Routes on a specific member
     if (parts[2] === 'members' && parts[3]) {
       const u = userById(parts[3]);
       if (!u) return json(res, 404, { error: 'Member not found' });
+
+      // GET /api/admin/members/:id/full — everything visible on their account
+      if (req.method === 'GET' && parts[4] === 'full') {
+        return json(res, 200, {
+          user: safeUser(u),
+          tier: tierOf(u),
+          orders: db.orders.filter((o) => o.userId === u.id),
+          lists: db.lists.filter((l) => l.userId === u.id),
+          projects: db.projects.filter((p) => p.userId === u.id),
+          report: db.carbon[u.id] || null,
+        });
+      }
+
+      // POST /api/admin/members/:id/orders — log an order / donation lot
+      if (req.method === 'POST' && parts[4] === 'orders') {
+        const b = await readBody(req);
+        const order = {
+          id: b.id || `ORD-2026-${orderSeq++}`,
+          userId: u.id,
+          type: b.type || undefined,
+          placed: b.placed || new Date().toISOString().slice(0, 10),
+          status: b.status || 'Reserved',
+          fulfilment: b.fulfilment || 'Collection — Material Reuse warehouse',
+          slot: b.slot || 'Slot to be confirmed',
+          items: Array.isArray(b.items) ? b.items : [],
+          total: b.total !== undefined ? +b.total : undefined,
+          memberDiscount: b.memberDiscount !== undefined ? +b.memberDiscount : undefined,
+          deliveryFee: b.deliveryFee !== undefined ? +b.deliveryFee : undefined,
+          carbonSavedKg: +b.carbonSavedKg || 0,
+          note: b.note || undefined,
+        };
+        db.orders.unshift(order);
+        saveOrders();
+        return json(res, 201, { order });
+      }
+
+      // POST /api/admin/members/:id/projects — log a project / audit
+      if (req.method === 'POST' && parts[4] === 'projects') {
+        const b = await readBody(req);
+        const project = {
+          id: `PRJ-${projectSeq++}`,
+          userId: u.id,
+          name: b.name || 'New project',
+          type: b.type || 'Community project',
+          status: b.status || 'Planning',
+          auditRef: b.auditRef || undefined,
+          started: b.started || new Date().toISOString().slice(0, 10),
+          target: b.target || null,
+          summary: b.summary || '',
+          progress: Math.max(0, Math.min(100, +b.progress || 0)),
+          carbonSavedKg: +b.carbonSavedKg || 0,
+          documents: Array.isArray(b.documents) ? b.documents : [],
+        };
+        db.projects.push(project);
+        saveProjects();
+        return json(res, 201, { project });
+      }
 
       // POST /api/admin/members/:id/password { password }
       if (req.method === 'POST' && parts[4] === 'password') {
@@ -351,6 +464,7 @@ async function api(req, res, url) {
       carbonSavedKg: +lines.reduce((s, l) => s + l.carbon, 0).toFixed(1),
     };
     db.orders.unshift(order);
+    saveOrders();
     return json(res, 201, { order });
   }
 
@@ -382,6 +496,7 @@ async function api(req, res, url) {
       name: body.name || 'New project list',
       created: new Date().toISOString().slice(0, 10), items: [] };
     db.lists.push(list);
+    saveLists();
     return json(res, 201, { list });
   }
 
@@ -394,6 +509,7 @@ async function api(req, res, url) {
     const existing = list.items.find((i) => i.sku === body.sku);
     if (existing) existing.qty += body.qty || 1;
     else list.items.push({ sku: body.sku, qty: body.qty || 1 });
+    saveLists();
     return json(res, 200, { list });
   }
 
@@ -403,6 +519,7 @@ async function api(req, res, url) {
     if (!list) return json(res, 404, { error: 'List not found' });
     if (!isAdmin && list.userId !== actor.id) return json(res, 403, { error: 'Forbidden' });
     list.items = list.items.filter((i) => i.sku !== parts[4]);
+    saveLists();
     return json(res, 200, { list });
   }
 
