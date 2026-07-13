@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Portal — material reuse</title>
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/portal.css">
+</head>
+<body>
+
+  <!-- ===================== LOGIN ===================== -->
+  <div id="login" class="login-wrap">
+    <div class="login-inner">
+      <div class="login-card">
+        <div class="login-logo">
+          <img src="https://www.material-reuse.co.uk/wp-content/uploads/2024/02/mrg-logo-white.svg" alt="Material Reuse Group logo">
+        </div>
+        <div class="login-body">
+          <p class="login-tag">Member portal — from <strong>‘waste’ to worth</strong>. Sign in to track your materials, orders, projects and carbon savings.</p>
+          <form id="loginForm" onsubmit="doLogin(event)">
+            <div class="login-field">
+              <label for="loginEmail">Email address</label>
+              <input id="loginEmail" type="email" autocomplete="username" required>
+            </div>
+            <div class="login-field">
+              <label for="loginPassword">Password</label>
+              <input id="loginPassword" type="password" autocomplete="current-password" required>
+            </div>
+            <div id="loginError" class="login-error"></div>
+            <button type="submit" id="loginBtn" class="btn btn-primary login-btn">Sign in</button>
+          </form>
+          <p class="login-note">Accounts are set up by the Material Reuse team — there’s no self-registration. Need access? Email hello@material-reuse.co.uk.</p>
+          <p class="login-foot">material-reuse.co.uk · 01932 867989 · hello@material-reuse.co.uk</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== APP SHELL ===================== -->
+  <div id="shell" class="shell">
+    <aside class="sidebar">
+      <div class="side-logo">
+        <img src="https://www.material-reuse.co.uk/wp-content/uploads/2024/02/mrg-logo-white.svg" alt="Material Reuse Group logo">
+      </div>
+      <nav class="nav" id="nav"></nav>
+      <div class="side-foot">
+        Building a sustainable future,<br>one material at a time.<br><br>
+        <a href="mailto:hello@material-reuse.co.uk">hello@material-reuse.co.uk</a><br>01932 867989
+      </div>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitle">Dashboard</h1>
+          <div class="crumb" id="pageCrumb"></div>
+        </div>
+        <div class="top-right">
+          <span id="tierBadge" class="tier-badge"></span>
+          <button class="logout-btn" onclick="logout()">Sign out</button>
+        </div>
+      </div>
+      <div id="view"></div>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div id="toastRoot"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
