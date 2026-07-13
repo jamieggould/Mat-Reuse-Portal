@@ -114,6 +114,8 @@ const ADMIN_PAGES = [
   { id: 'settings', label: 'Account Settings' },
 ];
 
+const HIDDEN_PAGES = { adminMember: { id: 'adminMember', label: 'Member account' } };
+
 const pagesFor = () => (state.user && state.user.role === 'admin' ? ADMIN_PAGES : PAGES);
 
 function renderNav() {
@@ -128,7 +130,7 @@ function renderNav() {
 async function go(page) {
   state.page = page;
   renderNav();
-  const meta = pagesFor().find((p) => p.id === page);
+  const meta = pagesFor().find((p) => p.id === page) || HIDDEN_PAGES[page];
   $('#pageTitle').textContent = meta.label;
   $('#pageCrumb').textContent = `${state.user && state.user.role === 'admin' ? 'Admin portal' : 'Member portal'} / ${meta.label}`;
   $('#view').innerHTML = '<div class="empty">Loading…</div>';
@@ -660,7 +662,7 @@ RENDER.adminOverview = async () => {
           <td>${(x.itemsRehomed || 0).toLocaleString('en-GB')}</td>
           <td>${x.orders}</td>
           <td>${fmtDate(x.memberSince)}</td>
-          <td><button class="btn btn-ghost btn-sm" onclick="editMember('${x.id}')">Edit</button></td>
+          <td><button class="btn btn-ghost btn-sm" onclick="openMember('${x.id}')">Manage</button></td>
         </tr>`).join('')}</table>` : '<div class="empty">No member accounts yet — create one on the Members page.</div>'}
     </div>
 
@@ -703,8 +705,7 @@ function memberRow(mm) {
       <div><h4>${esc(mm.name)}</h4>
         <div class="meta">${esc(mm.email)}${mm.organisation ? ' · ' + esc(mm.organisation) : ''} · ${esc(mm.tierName)}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="editMember('${mm.id}')">Edit details</button>
-        <button class="btn btn-ghost btn-sm" onclick="editCarbon('${mm.id}')">Carbon data</button>
+        <button class="btn btn-primary btn-sm" onclick="openMember('${mm.id}')">Manage account</button>
         <button class="btn btn-ghost btn-sm" onclick="resetMemberPw('${mm.id}')">Reset password</button>
         <button class="btn btn-ghost btn-sm" onclick="deleteMember('${mm.id}')">Delete</button>
       </div>
@@ -797,6 +798,253 @@ async function saveCarbonReport(id) {
   try {
     await api(`/api/admin/members/${id}/carbon`, { method: 'PUT', body });
     closeModal(); toast('Carbon report saved'); go(state.page);
+  } catch (e) { toast(e.message); }
+}
+
+/* ================= ADMIN — SINGLE MEMBER (log everything they see) ================= */
+function openMember(id) { ADMIN.currentId = id; go('adminMember'); }
+
+RENDER.adminMember = async () => {
+  const id = ADMIN.currentId;
+  if (!id) return go('adminMembers');
+  const [list, d] = await Promise.all([
+    api('/api/admin/members'),
+    api(`/api/admin/members/${id}/full`),
+  ]);
+  ADMIN = { ...list, currentId: id, full: d };
+  const u = d.user, t = d.tier;
+
+  $('#view').innerHTML = `
+    <div class="tagline-strip">
+      <span><b>${esc(u.name)}</b> — ${esc(u.email)}${u.organisation ? ' · ' + esc(u.organisation) : ''} · ${t ? esc(t.name) : '—'}</span>
+      <button class="btn btn-green btn-sm" onclick="go('adminMembers')">Back to members</button>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <button class="btn btn-primary btn-sm" onclick="editMember('${u.id}')">Edit details & stats</button>
+      <button class="btn btn-ghost btn-sm" onclick="editCarbon('${u.id}')">Carbon report data</button>
+      <button class="btn btn-ghost btn-sm" onclick="editBilling()">Billing & invoices</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetMemberPw('${u.id}')">Reset password</button>
+      <button class="btn btn-ghost btn-sm" onclick="deleteMember('${u.id}')">Delete account</button>
+    </div>
+
+    <div class="grid cols-4" style="margin-top:18px">
+      <div class="card stat"><span class="stripe" style="background:var(--green)"></span>
+        <div class="lbl">Carbon saved</div><div class="big">${fmtKg(u.carbonSavedKg || 0)}</div>
+        <div class="sub">Shown on their dashboard</div></div>
+      <div class="card stat"><span class="stripe" style="background:var(--azul)"></span>
+        <div class="lbl">Items rehomed</div><div class="big">${(u.itemsRehomed || 0).toLocaleString('en-GB')}</div>
+        <div class="sub">Shown on their dashboard</div></div>
+      <div class="card stat"><span class="stripe" style="background:var(--yellow)"></span>
+        <div class="lbl">Orders logged</div><div class="big">${d.orders.length}</div>
+        <div class="sub">Incl. donation lots</div></div>
+      <div class="card stat"><span class="stripe" style="background:var(--orange)"></span>
+        <div class="lbl">Projects & audits</div><div class="big">${d.projects.length}</div>
+        <div class="sub">Visible on their Projects tab</div></div>
+    </div>
+
+    <div class="card" style="margin-top:28px">
+      <div class="order-head">
+        <h3>Orders & collections</h3>
+        <button class="btn btn-primary btn-sm" onclick="orderModal()">Log an order</button>
+      </div>
+      ${d.orders.length ? `<table>
+        <tr><th>Order</th><th>Type</th><th>Status</th><th>Slot</th><th>Total</th><th>Carbon</th><th></th></tr>
+        ${d.orders.map((o) => `<tr>
+          <td><b>${esc(o.id)}</b><br><span class="small muted">${fmtDate(o.placed)}</span></td>
+          <td>${o.type === 'donation' ? 'Donation lot' : 'Order'}</td>
+          <td>${statusPill(o.status)}</td>
+          <td class="small">${esc(o.slot || '—')}</td>
+          <td>${o.total !== undefined && o.total !== null ? fmtGBP(o.total) : '—'}</td>
+          <td>${fmtKg(o.carbonSavedKg || 0)}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-ghost btn-sm" onclick="orderModal('${o.id}')">Edit</button>
+            <button class="btn btn-ghost btn-sm" onclick="deleteOrder('${o.id}')">Delete</button></td>
+        </tr>`).join('')}</table>` : '<div class="empty">No orders logged for this member.</div>'}
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="order-head">
+        <h3>Projects & audits</h3>
+        <button class="btn btn-primary btn-sm" onclick="projectModal()">Log a project / audit</button>
+      </div>
+      ${d.projects.length ? `<table>
+        <tr><th>Project</th><th>Type</th><th>Status</th><th>Progress</th><th>Target</th><th>Carbon</th><th></th></tr>
+        ${d.projects.map((p) => `<tr>
+          <td><b>${esc(p.name)}</b>${p.auditRef ? `<br><span class="small muted">Audit ref ${esc(p.auditRef)}</span>` : ''}</td>
+          <td class="small">${esc(p.type)}</td>
+          <td>${statusPill(p.status)}</td>
+          <td>${p.progress || 0}%</td>
+          <td>${fmtDate(p.target)}</td>
+          <td>${fmtKg(p.carbonSavedKg || 0)}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-ghost btn-sm" onclick="projectModal('${p.id}')">Edit</button>
+            <button class="btn btn-ghost btn-sm" onclick="deleteProject('${p.id}')">Delete</button></td>
+        </tr>`).join('')}</table>` : '<div class="empty">No projects or audits logged — these appear on the member’s Projects & Audits tab.</div>'}
+    </div>
+
+    <div class="grid cols-2" style="margin-top:16px">
+      <div class="card">
+        <h3 style="margin-bottom:10px">Billing (what they see)</h3>
+        <p><b>Method:</b> ${esc((u.billing && u.billing.method) || 'None — free plan')}</p>
+        <p><b>Next payment:</b> ${u.billing && u.billing.nextPayment ? fmtDate(u.billing.nextPayment) : '—'}</p>
+        <p><b>Invoices:</b> ${u.billing && u.billing.invoices ? u.billing.invoices.length : 0}</p>
+        ${u.accountManager ? `<p style="margin-top:8px"><b>Account manager:</b> ${esc(u.accountManager.name)}</p>` : ''}
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="editBilling()">Edit billing & invoices</button>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:10px">Shopping lists (member-managed)</h3>
+        ${d.lists.length ? d.lists.map((l) => `<div class="doc-row">
+          <span class="t">${esc(l.name)}<span>${l.items.length} line${l.items.length === 1 ? '' : 's'} · created ${fmtDate(l.created)}</span></span>
+        </div>`).join('') : '<div class="empty">No lists yet.</div>'}
+      </div>
+    </div>`;
+};
+
+/* ---- order modal ---- */
+const ORDER_STATUSES = ['Reserved', 'Awaiting collection', 'Ready for collection', 'Collected', 'Delivered', 'Passports issued', 'Logged — emission assessment'];
+
+function orderModal(oid) {
+  const o = (oid && ADMIN.full.orders.find((x) => x.id === oid)) || {};
+  $('#modalRoot').innerHTML = `
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <button class="close" onclick="closeModal()">✕</button>
+      <h3 style="margin-bottom:16px">${oid ? 'Edit ' + esc(o.id) : 'Log an order'}</h3>
+      <div class="form-grid">
+        <div><label>Type</label><select id="odType">
+          <option value="order" ${o.type !== 'donation' ? 'selected' : ''}>Order / reservation</option>
+          <option value="donation" ${o.type === 'donation' ? 'selected' : ''}>Donation lot</option></select></div>
+        <div><label>Status</label><select id="odStatus">
+          ${ORDER_STATUSES.map((s) => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+        <div><label>Date placed</label><input id="odPlaced" value="${esc(o.placed || new Date().toISOString().slice(0, 10))}" placeholder="YYYY-MM-DD"></div>
+        <div><label>Slot</label><input id="odSlot" value="${esc(o.slot || '')}" placeholder="e.g. 2026-07-20, 14:00–16:00"></div>
+        <div style="grid-column:1/-1"><label>Fulfilment</label><input id="odFulfil" value="${esc(o.fulfilment || 'Collection — Material Reuse warehouse')}"></div>
+        <div><label>Total (£)</label><input id="odTotal" type="number" step="0.01" value="${o.total ?? ''}"></div>
+        <div><label>Member discount (£)</label><input id="odDisc" type="number" step="0.01" value="${o.memberDiscount ?? ''}"></div>
+        <div><label>Delivery fee (£)</label><input id="odFee" type="number" step="0.01" value="${o.deliveryFee ?? ''}"></div>
+        <div><label>Carbon saved (kg CO₂e)</label><input id="odCarbon" type="number" step="0.1" value="${o.carbonSavedKg || 0}"></div>
+        <div style="grid-column:1/-1"><label>Note (shown to member)</label><input id="odNote" value="${esc(o.note || '')}"></div>
+        <div style="grid-column:1/-1"><label>Items — JSON [{"title":"…","qty":1,"price":0,"sku":"…"}]</label>
+          <textarea id="odItems" style="width:100%;height:110px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:2px;padding:10px">${esc(JSON.stringify(o.items || [], null, 2))}</textarea></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:18px" onclick="saveOrder(${oid ? `'${oid}'` : 'null'})">Save order</button>
+    </div>
+  </div>`;
+}
+
+async function saveOrder(oid) {
+  let items;
+  try { items = JSON.parse($('#odItems').value || '[]'); } catch { return toast('Items must be valid JSON'); }
+  if (!Array.isArray(items)) return toast('Items must be a JSON array');
+  const num = (id) => { const v = $(id).value; return v === '' ? undefined : parseFloat(v) || 0; };
+  const body = {
+    type: $('#odType').value, status: $('#odStatus').value,
+    placed: $('#odPlaced').value, slot: $('#odSlot').value,
+    fulfilment: $('#odFulfil').value, note: $('#odNote').value || undefined,
+    total: num('#odTotal'), memberDiscount: num('#odDisc'), deliveryFee: num('#odFee'),
+    carbonSavedKg: parseFloat($('#odCarbon').value) || 0, items,
+  };
+  try {
+    if (oid) await api('/api/admin/orders/' + oid, { method: 'PATCH', body });
+    else await api(`/api/admin/members/${ADMIN.currentId}/orders`, { method: 'POST', body });
+    closeModal(); toast('Order saved'); go('adminMember');
+  } catch (e) { toast(e.message); }
+}
+
+async function deleteOrder(oid) {
+  if (!confirm(`Delete ${oid}? The member will no longer see it.`)) return;
+  try {
+    await api('/api/admin/orders/' + oid, { method: 'DELETE' });
+    toast('Order deleted'); go('adminMember');
+  } catch (e) { toast(e.message); }
+}
+
+/* ---- project / audit modal ---- */
+function projectModal(pid) {
+  const p = (pid && ADMIN.full.projects.find((x) => x.id === pid)) || {};
+  $('#modalRoot').innerHTML = `
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <button class="close" onclick="closeModal()">✕</button>
+      <h3 style="margin-bottom:16px">${pid ? 'Edit ' + esc(p.name) : 'Log a project / audit'}</h3>
+      <div class="form-grid">
+        <div style="grid-column:1/-1"><label>Project name</label><input id="pjName" value="${esc(p.name || '')}"></div>
+        <div><label>Type</label><input id="pjType" value="${esc(p.type || '')}" placeholder="e.g. Pre-demolition audit + donation"></div>
+        <div><label>Status</label><select id="pjStatus">
+          ${['Planning', 'In progress', 'Complete'].map((s) => `<option ${p.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+        <div><label>Audit ref</label><input id="pjRef" value="${esc(p.auditRef || '')}" placeholder="Optional"></div>
+        <div><label>Progress (%)</label><input id="pjProg" type="number" min="0" max="100" value="${p.progress || 0}"></div>
+        <div><label>Started</label><input id="pjStart" value="${esc(p.started || new Date().toISOString().slice(0, 10))}" placeholder="YYYY-MM-DD"></div>
+        <div><label>Target date</label><input id="pjTarget" value="${esc(p.target || '')}" placeholder="YYYY-MM-DD"></div>
+        <div><label>Carbon saved (kg CO₂e)</label><input id="pjCarbon" type="number" step="0.1" value="${p.carbonSavedKg || 0}"></div>
+        <div style="grid-column:1/-1"><label>Summary (shown to member)</label><input id="pjSummary" value="${esc(p.summary || '')}"></div>
+        <div style="grid-column:1/-1"><label>Documents — JSON [{"name":"report.pdf","type":"Carbon report","date":"2026-07-01"}]</label>
+          <textarea id="pjDocs" style="width:100%;height:100px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:2px;padding:10px">${esc(JSON.stringify(p.documents || [], null, 2))}</textarea></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:18px" onclick="saveProject(${pid ? `'${pid}'` : 'null'})">Save project</button>
+    </div>
+  </div>`;
+}
+
+async function saveProject(pid) {
+  let documents;
+  try { documents = JSON.parse($('#pjDocs').value || '[]'); } catch { return toast('Documents must be valid JSON'); }
+  if (!Array.isArray(documents)) return toast('Documents must be a JSON array');
+  const body = {
+    name: $('#pjName').value, type: $('#pjType').value, status: $('#pjStatus').value,
+    auditRef: $('#pjRef').value || undefined, progress: parseInt($('#pjProg').value, 10) || 0,
+    started: $('#pjStart').value, target: $('#pjTarget').value || null,
+    carbonSavedKg: parseFloat($('#pjCarbon').value) || 0,
+    summary: $('#pjSummary').value, documents,
+  };
+  try {
+    if (pid) await api('/api/admin/projects/' + pid, { method: 'PATCH', body });
+    else await api(`/api/admin/members/${ADMIN.currentId}/projects`, { method: 'POST', body });
+    closeModal(); toast('Project saved'); go('adminMember');
+  } catch (e) { toast(e.message); }
+}
+
+async function deleteProject(pid) {
+  if (!confirm('Delete this project? The member will no longer see it.')) return;
+  try {
+    await api('/api/admin/projects/' + pid, { method: 'DELETE' });
+    toast('Project deleted'); go('adminMember');
+  } catch (e) { toast(e.message); }
+}
+
+/* ---- billing modal ---- */
+function editBilling() {
+  const u = ADMIN.full.user;
+  const b = u.billing || { method: null, nextPayment: null, invoices: [] };
+  $('#modalRoot').innerHTML = `
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <button class="close" onclick="closeModal()">✕</button>
+      <h3 style="margin-bottom:16px">Billing — ${esc(u.name)}</h3>
+      <div class="form-grid">
+        <div><label>Payment method</label><input id="blMethod" value="${esc(b.method || '')}" placeholder="e.g. Visa •••• 4821 / Invoice — 30 day terms"></div>
+        <div><label>Next payment</label><input id="blNext" value="${esc(b.nextPayment || '')}" placeholder="YYYY-MM-DD"></div>
+        <div style="grid-column:1/-1"><label>Invoices — JSON [{"id":"INV-2026-0001","date":"2026-07-01","amount":500,"status":"Paid","desc":"…"}]</label>
+          <textarea id="blInvoices" style="width:100%;height:160px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:2px;padding:10px">${esc(JSON.stringify(b.invoices || [], null, 2))}</textarea></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:18px" onclick="saveBilling()">Save billing</button>
+    </div>
+  </div>`;
+}
+
+async function saveBilling() {
+  let invoices;
+  try { invoices = JSON.parse($('#blInvoices').value || '[]'); } catch { return toast('Invoices must be valid JSON'); }
+  if (!Array.isArray(invoices)) return toast('Invoices must be a JSON array');
+  const body = { billing: {
+    method: $('#blMethod').value || null,
+    nextPayment: $('#blNext').value || null,
+    invoices,
+  } };
+  try {
+    await api('/api/admin/members/' + ADMIN.currentId, { method: 'PATCH', body });
+    closeModal(); toast('Billing saved'); go('adminMember');
   } catch (e) { toast(e.message); }
 }
 
