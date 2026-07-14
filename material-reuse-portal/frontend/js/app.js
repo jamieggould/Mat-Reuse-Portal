@@ -448,7 +448,7 @@ RENDER.projects = async () => {
   const { projects } = await api('/api/projects?userId=' + state.user.id);
   $('#view').innerHTML = `
     ${g.audits ? `<div class="tagline-strip" style="margin-bottom:18px">
-      <span>Need a GLA-compliant pre-demolition audit? Your partner rate includes Lawmens strip-out at 5% off.</span>
+      <span>Need a pre-refurbishment audit? Your partner rate includes Lawmens strip-out at 5% off.</span>
       <button class="btn btn-green btn-sm" onclick="toast('Request sent — your account manager will be in touch within one working day')">Request an audit</button>
     </div>` : ''}
     ${projects.length ? projects.map((p) => `
@@ -1079,14 +1079,14 @@ async function deleteOrder(oid) {
 /* ---- project / audit modal ---- */
 const docRow = (d = {}) => `
   <div class="row-line" style="grid-template-columns:1fr 180px 160px 44px" ${d.id ? `data-id="${esc(d.id)}"` : ''}>
-    <input class="dc-name" value="${esc(d.name || '')}" placeholder="e.g. Pre-demolition audit.pdf">
+    <input class="dc-name" value="${esc(d.name || '')}" placeholder="e.g. Pre-refurbishment audit.pdf">
     <input class="dc-type" value="${esc(d.type || '')}" placeholder="e.g. Audit report">
     <input type="date" class="dc-date" value="${esc(d.date || '')}">
     <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
   </div>`;
 function addDocRow() { addRowHTML('#pjDocs', docRow()); }
 
-const PROJECT_TYPES = ['Pre-demolition audit', 'Pre-demolition audit + donation', 'Resource management plan', 'Circular economy statement', 'Strip-out', 'Donation programme', 'Community project', 'Home renovation'];
+const PROJECT_TYPES = ['Pre-refurbishment audit', 'Resource management plan', 'Circular economy report', 'Strip-out'];
 
 function projectModal(pid) {
   const p = (pid && ADMIN.full.projects.find((x) => x.id === pid)) || {};
