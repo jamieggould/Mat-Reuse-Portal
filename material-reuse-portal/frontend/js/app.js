@@ -775,26 +775,119 @@ async function saveMember(id) {
   } catch (e) { toast(e.message); }
 }
 
+/* ---- simple row editors (no JSON for admins) ---- */
+function delRow(btn) { btn.closest('.row-line').remove(); }
+function addRowHTML(sel, html) { $(sel).insertAdjacentHTML('beforeend', html); }
+
+const monthRow = (m = '', kg = '') => `
+  <div class="row-line" style="grid-template-columns:180px 1fr 44px">
+    <input type="month" class="cr-m" value="${esc(m)}">
+    <input type="number" step="0.1" min="0" class="cr-kg" value="${kg}" placeholder="0">
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+  </div>`;
+const catRow = (c = '', kg = '') => `
+  <div class="row-line" style="grid-template-columns:1fr 170px 44px">
+    <input class="cc-cat" value="${esc(c)}" placeholder="e.g. Office & IT">
+    <input type="number" step="0.1" min="0" class="cc-kg" value="${kg}" placeholder="0">
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+  </div>`;
+const wlcaRow = (k = '', v = '') => `
+  <div class="row-line" style="grid-template-columns:1fr 170px 44px">
+    <input class="cw-k" value="${esc(k)}" placeholder="e.g. A1-A3 avoided">
+    <input type="number" step="1" class="cw-v" value="${v}" placeholder="0">
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+  </div>`;
+function addMonthRow() { addRowHTML('#crMonths', monthRow()); }
+function addCatRow() { addRowHTML('#crCats', catRow()); }
+function addWlcaRow() { addRowHTML('#crWlca', wlcaRow()); }
+
+function autoEquivalents() {
+  const kg = parseFloat($('#crTotal').value) || 0;
+  $('#crMiles').value = Math.round(kg * 2.5);
+  $('#crTrees').value = +(kg / 22).toFixed(1);
+  $('#crFlights').value = +(kg / 120).toFixed(1);
+  toast('Equivalents filled in from the total');
+}
+
 async function editCarbon(id) {
   const mm = ADMIN.members.find((x) => x.id === id);
   if (!mm) return;
   const { report } = await api(`/api/admin/members/${id}/carbon`);
-  const r = report || { totalSavedKg: 0, monthly: [], byCategory: [], equivalents: { carMiles: 0, treeYears: 0 }, verified: false };
+  const r = report || {};
+  const eq = r.equivalents || {};
+  const monthly = r.monthly || [];
+  const cats = r.byCategory || [];
+  const wlca = r.wlcaModules ? Object.entries(r.wlcaModules) : [];
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
-    <div class="modal">
+    <div class="modal modal-lg">
       <button class="close" onclick="closeModal()">✕</button>
-      <h3 style="margin-bottom:8px">Carbon report — ${esc(mm.name)}</h3>
-      <p class="small muted" style="margin-bottom:12px">This drives the member’s dashboard: <b>totalSavedKg</b>, <b>monthly</b> [{"month":"2026-01","kg":0}], <b>byCategory</b> [{"category":"…","kg":0}], <b>equivalents</b> {"carMiles":0,"treeYears":0}, <b>verified</b>, <b>verifier</b> and optional <b>wlcaModules</b>.</p>
-      <textarea id="carbonJson" style="width:100%;height:320px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:2px;padding:12px">${esc(JSON.stringify(r, null, 2))}</textarea>
-      <button class="btn btn-primary" style="margin-top:14px" onclick="saveCarbonReport('${id}')">Save carbon report</button>
+      <h3>Carbon report — ${esc(mm.name)}</h3>
+      <p class="m-sub">Everything here appears on the member’s dashboard. Fill in what you have — anything left empty is simply hidden from them.</p>
+
+      <div class="form-grid">
+        <div><label>Total carbon saved (kg CO₂e)</label><input id="crTotal" type="number" step="0.1" min="0" value="${r.totalSavedKg || 0}"></div>
+      </div>
+
+      <div class="m-section"><h4>“That’s the same as…”</h4><span class="m-hint">Shown next to the headline number</span></div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr">
+        <div><label>Car miles</label><input id="crMiles" type="number" step="1" min="0" value="${eq.carMiles || 0}"></div>
+        <div><label>Years of tree growth</label><input id="crTrees" type="number" step="0.1" min="0" value="${eq.treeYears || 0}"></div>
+        <div><label>London–Edinburgh flights</label><input id="crFlights" type="number" step="0.1" min="0" value="${eq.flightsLHRtoEDI || 0}"></div>
+      </div>
+      <button type="button" class="row-add" onclick="autoEquivalents()">Work these out from the total for me</button>
+
+      <div class="m-section"><h4>Month-by-month savings</h4><span class="m-hint">Drives the bar chart on their dashboard</span></div>
+      <div class="row-head" style="grid-template-columns:180px 1fr 44px"><span>Month</span><span>Kg saved</span><span></span></div>
+      <div class="row-editor" id="crMonths">${monthly.map((m) => monthRow(m.month, m.kg)).join('')}</div>
+      <button type="button" class="row-add" onclick="addMonthRow()">+ Add a month</button>
+
+      <div class="m-section"><h4>Savings by material category</h4><span class="m-hint">e.g. Office & IT, Electrical, Heating</span></div>
+      <div class="row-head" style="grid-template-columns:1fr 170px 44px"><span>Category</span><span>Kg saved</span><span></span></div>
+      <div class="row-editor" id="crCats">${cats.map((c) => catRow(c.category, c.kg)).join('')}</div>
+      <button type="button" class="row-add" onclick="addCatRow()">+ Add a category</button>
+
+      <div class="m-section"><h4>Verification</h4><span class="m-hint">For tiers with verified reporting</span></div>
+      <label class="check-line"><input type="checkbox" id="crVerified" ${r.verified ? 'checked' : ''}> This report has been independently verified</label>
+      <div class="form-grid"><div style="grid-column:1/-1"><label>Verified by</label><input id="crVerifier" value="${esc(r.verifier || '')}" placeholder="e.g. Alphacello — carbon traceability partner"></div></div>
+
+      <div class="m-section"><h4>Whole-life carbon (corporate only)</h4><span class="m-hint">Optional WLCA breakdown — leave empty for most members</span></div>
+      <div class="row-editor" id="crWlca">${wlca.map(([k, v]) => wlcaRow(k, v)).join('')}</div>
+      <button type="button" class="row-add" onclick="addWlcaRow()">+ Add a WLCA line</button>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveCarbonReport('${id}')">Save carbon report</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
     </div>
   </div>`;
 }
 
 async function saveCarbonReport(id) {
-  let body;
-  try { body = JSON.parse($('#carbonJson').value); } catch { return toast('Invalid JSON — check the format'); }
+  const rows = (sel) => Array.from(document.querySelectorAll(sel + ' .row-line'));
+  const monthly = rows('#crMonths')
+    .map((r) => ({ month: r.querySelector('.cr-m').value, kg: parseFloat(r.querySelector('.cr-kg').value) || 0 }))
+    .filter((m) => m.month)
+    .sort((a, b) => a.month.localeCompare(b.month));
+  const byCategory = rows('#crCats')
+    .map((r) => ({ category: r.querySelector('.cc-cat').value.trim(), kg: parseFloat(r.querySelector('.cc-kg').value) || 0 }))
+    .filter((c) => c.category);
+  const wlcaRows = rows('#crWlca')
+    .map((r) => [r.querySelector('.cw-k').value.trim(), parseFloat(r.querySelector('.cw-v').value) || 0])
+    .filter(([k]) => k);
+  const body = {
+    totalSavedKg: parseFloat($('#crTotal').value) || 0,
+    equivalents: {
+      carMiles: parseFloat($('#crMiles').value) || 0,
+      treeYears: parseFloat($('#crTrees').value) || 0,
+      flightsLHRtoEDI: parseFloat($('#crFlights').value) || 0,
+    },
+    monthly, byCategory,
+    verified: $('#crVerified').checked,
+  };
+  const verifier = $('#crVerifier').value.trim();
+  if (verifier) body.verifier = verifier;
+  if (wlcaRows.length) body.wlcaModules = Object.fromEntries(wlcaRows);
   try {
     await api(`/api/admin/members/${id}/carbon`, { method: 'PUT', body });
     closeModal(); toast('Carbon report saved'); go(state.page);
@@ -904,39 +997,62 @@ RENDER.adminMember = async () => {
 /* ---- order modal ---- */
 const ORDER_STATUSES = ['Reserved', 'Awaiting collection', 'Ready for collection', 'Collected', 'Delivered', 'Passports issued', 'Logged — emission assessment'];
 
+const itemRow = (it = {}) => `
+  <div class="row-line" style="grid-template-columns:1fr 90px 140px 44px" ${it.sku ? `data-sku="${esc(it.sku)}"` : ''}>
+    <input class="oi-title" value="${esc(it.title || '')}" placeholder="e.g. Herman Miller task chair">
+    <input type="number" min="1" step="1" class="oi-qty" value="${it.qty || 1}">
+    <input type="number" min="0" step="0.01" class="oi-price" value="${it.price ?? ''}" placeholder="0.00">
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+  </div>`;
+function addItemRow() { addRowHTML('#odItems', itemRow()); }
+
 function orderModal(oid) {
   const o = (oid && ADMIN.full.orders.find((x) => x.id === oid)) || {};
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
-    <div class="modal">
+    <div class="modal modal-lg">
       <button class="close" onclick="closeModal()">✕</button>
-      <h3 style="margin-bottom:16px">${oid ? 'Edit ' + esc(o.id) : 'Log an order'}</h3>
+      <h3>${oid ? 'Edit ' + esc(o.id) : 'Log an order'}</h3>
+      <p class="m-sub">This appears on the member’s Orders & Collections page exactly as you enter it.</p>
       <div class="form-grid">
         <div><label>Type</label><select id="odType">
           <option value="order" ${o.type !== 'donation' ? 'selected' : ''}>Order / reservation</option>
           <option value="donation" ${o.type === 'donation' ? 'selected' : ''}>Donation lot</option></select></div>
         <div><label>Status</label><select id="odStatus">
           ${ORDER_STATUSES.map((s) => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-        <div><label>Date placed</label><input id="odPlaced" value="${esc(o.placed || new Date().toISOString().slice(0, 10))}" placeholder="YYYY-MM-DD"></div>
-        <div><label>Slot</label><input id="odSlot" value="${esc(o.slot || '')}" placeholder="e.g. 2026-07-20, 14:00–16:00"></div>
+        <div><label>Date placed</label><input id="odPlaced" type="date" value="${esc(o.placed || new Date().toISOString().slice(0, 10))}"></div>
+        <div><label>Collection / delivery slot</label><input id="odSlot" value="${esc(o.slot || '')}" placeholder="e.g. Mon 20 Jul, 14:00–16:00"></div>
         <div style="grid-column:1/-1"><label>Fulfilment</label><input id="odFulfil" value="${esc(o.fulfilment || 'Collection — Material Reuse warehouse')}"></div>
-        <div><label>Total (£)</label><input id="odTotal" type="number" step="0.01" value="${o.total ?? ''}"></div>
-        <div><label>Member discount (£)</label><input id="odDisc" type="number" step="0.01" value="${o.memberDiscount ?? ''}"></div>
-        <div><label>Delivery fee (£)</label><input id="odFee" type="number" step="0.01" value="${o.deliveryFee ?? ''}"></div>
+        <div><label>Total (£)</label><input id="odTotal" type="number" step="0.01" value="${o.total ?? ''}" placeholder="Leave blank if free"></div>
+        <div><label>Member discount (£)</label><input id="odDisc" type="number" step="0.01" value="${o.memberDiscount ?? ''}" placeholder="Optional"></div>
+        <div><label>Delivery fee (£)</label><input id="odFee" type="number" step="0.01" value="${o.deliveryFee ?? ''}" placeholder="Optional"></div>
         <div><label>Carbon saved (kg CO₂e)</label><input id="odCarbon" type="number" step="0.1" value="${o.carbonSavedKg || 0}"></div>
-        <div style="grid-column:1/-1"><label>Note (shown to member)</label><input id="odNote" value="${esc(o.note || '')}"></div>
-        <div style="grid-column:1/-1"><label>Items — JSON [{"title":"…","qty":1,"price":0,"sku":"…"}]</label>
-          <textarea id="odItems" style="width:100%;height:110px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:2px;padding:10px">${esc(JSON.stringify(o.items || [], null, 2))}</textarea></div>
+        <div style="grid-column:1/-1"><label>Note (shown to member)</label><input id="odNote" value="${esc(o.note || '')}" placeholder="Optional — e.g. Please bring a van and one extra pair of hands"></div>
       </div>
-      <button class="btn btn-primary" style="margin-top:18px" onclick="saveOrder(${oid ? `'${oid}'` : 'null'})">Save order</button>
+
+      <div class="m-section"><h4>What’s in this order</h4><span class="m-hint">Optional — listed line by line on the member’s order</span></div>
+      <div class="row-head" style="grid-template-columns:1fr 90px 140px 44px"><span>Item</span><span>Qty</span><span>Price each (£)</span><span></span></div>
+      <div class="row-editor" id="odItems">${(o.items || []).map((it) => itemRow(it)).join('')}</div>
+      <button type="button" class="row-add" onclick="addItemRow()">+ Add an item</button>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveOrder(${oid ? `'${oid}'` : 'null'})">Save order</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
     </div>
   </div>`;
 }
 
 async function saveOrder(oid) {
-  let items;
-  try { items = JSON.parse($('#odItems').value || '[]'); } catch { return toast('Items must be valid JSON'); }
-  if (!Array.isArray(items)) return toast('Items must be a JSON array');
+  const items = Array.from(document.querySelectorAll('#odItems .row-line')).map((r) => {
+    const it = {
+      title: r.querySelector('.oi-title').value.trim(),
+      qty: parseInt(r.querySelector('.oi-qty').value, 10) || 1,
+      price: parseFloat(r.querySelector('.oi-price').value) || 0,
+    };
+    if (r.dataset.sku) it.sku = r.dataset.sku;
+    return it;
+  }).filter((it) => it.title);
   const num = (id) => { const v = $(id).value; return v === '' ? undefined : parseFloat(v) || 0; };
   const body = {
     type: $('#odType').value, status: $('#odStatus').value,
@@ -961,36 +1077,60 @@ async function deleteOrder(oid) {
 }
 
 /* ---- project / audit modal ---- */
+const docRow = (d = {}) => `
+  <div class="row-line" style="grid-template-columns:1fr 180px 160px 44px" ${d.id ? `data-id="${esc(d.id)}"` : ''}>
+    <input class="dc-name" value="${esc(d.name || '')}" placeholder="e.g. Pre-demolition audit.pdf">
+    <input class="dc-type" value="${esc(d.type || '')}" placeholder="e.g. Audit report">
+    <input type="date" class="dc-date" value="${esc(d.date || '')}">
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+  </div>`;
+function addDocRow() { addRowHTML('#pjDocs', docRow()); }
+
+const PROJECT_TYPES = ['Pre-demolition audit', 'Pre-demolition audit + donation', 'Resource management plan', 'Circular economy statement', 'Office strip-out', 'Donation programme', 'Community project', 'Home renovation'];
+
 function projectModal(pid) {
   const p = (pid && ADMIN.full.projects.find((x) => x.id === pid)) || {};
+  const typeOpts = PROJECT_TYPES.map((t) => `<option ${p.type === t ? 'selected' : ''}>${t}</option>`).join('')
+    + (p.type && !PROJECT_TYPES.includes(p.type) ? `<option selected>${esc(p.type)}</option>` : '');
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
-    <div class="modal">
+    <div class="modal modal-lg">
       <button class="close" onclick="closeModal()">✕</button>
-      <h3 style="margin-bottom:16px">${pid ? 'Edit ' + esc(p.name) : 'Log a project / audit'}</h3>
+      <h3>${pid ? 'Edit ' + esc(p.name) : 'Log a project / audit'}</h3>
+      <p class="m-sub">This appears on the member’s Projects & Audits page.</p>
       <div class="form-grid">
-        <div style="grid-column:1/-1"><label>Project name</label><input id="pjName" value="${esc(p.name || '')}"></div>
-        <div><label>Type</label><input id="pjType" value="${esc(p.type || '')}" placeholder="e.g. Pre-demolition audit + donation"></div>
+        <div style="grid-column:1/-1"><label>Project name</label><input id="pjName" value="${esc(p.name || '')}" placeholder="e.g. HQ office strip-out — Floor 3"></div>
+        <div><label>Type</label><select id="pjType">${typeOpts}</select></div>
         <div><label>Status</label><select id="pjStatus">
           ${['Planning', 'In progress', 'Complete'].map((s) => `<option ${p.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-        <div><label>Audit ref</label><input id="pjRef" value="${esc(p.auditRef || '')}" placeholder="Optional"></div>
+        <div><label>Audit reference</label><input id="pjRef" value="${esc(p.auditRef || '')}" placeholder="Optional — e.g. GLA-2026-114"></div>
         <div><label>Progress (%)</label><input id="pjProg" type="number" min="0" max="100" value="${p.progress || 0}"></div>
-        <div><label>Started</label><input id="pjStart" value="${esc(p.started || new Date().toISOString().slice(0, 10))}" placeholder="YYYY-MM-DD"></div>
-        <div><label>Target date</label><input id="pjTarget" value="${esc(p.target || '')}" placeholder="YYYY-MM-DD"></div>
+        <div><label>Started</label><input id="pjStart" type="date" value="${esc(p.started || new Date().toISOString().slice(0, 10))}"></div>
+        <div><label>Target date</label><input id="pjTarget" type="date" value="${esc(p.target || '')}"></div>
         <div><label>Carbon saved (kg CO₂e)</label><input id="pjCarbon" type="number" step="0.1" value="${p.carbonSavedKg || 0}"></div>
-        <div style="grid-column:1/-1"><label>Summary (shown to member)</label><input id="pjSummary" value="${esc(p.summary || '')}"></div>
-        <div style="grid-column:1/-1"><label>Documents — JSON [{"name":"report.pdf","type":"Carbon report","date":"2026-07-01"}]</label>
-          <textarea id="pjDocs" style="width:100%;height:100px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:2px;padding:10px">${esc(JSON.stringify(p.documents || [], null, 2))}</textarea></div>
+        <div style="grid-column:1/-1"><label>Summary (shown to member)</label><input id="pjSummary" value="${esc(p.summary || '')}" placeholder="One or two sentences about the project"></div>
       </div>
-      <button class="btn btn-primary" style="margin-top:18px" onclick="saveProject(${pid ? `'${pid}'` : 'null'})">Save project</button>
+
+      <div class="m-section"><h4>Documents</h4><span class="m-hint">Optional — listed in the member’s document library</span></div>
+      <div class="row-head" style="grid-template-columns:1fr 180px 160px 44px"><span>Document name</span><span>Type</span><span>Date</span><span></span></div>
+      <div class="row-editor" id="pjDocs">${(p.documents || []).map((d) => docRow(d)).join('')}</div>
+      <button type="button" class="row-add" onclick="addDocRow()">+ Add a document</button>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveProject(${pid ? `'${pid}'` : 'null'})">Save project</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
     </div>
   </div>`;
 }
 
 async function saveProject(pid) {
-  let documents;
-  try { documents = JSON.parse($('#pjDocs').value || '[]'); } catch { return toast('Documents must be valid JSON'); }
-  if (!Array.isArray(documents)) return toast('Documents must be a JSON array');
+  const documents = Array.from(document.querySelectorAll('#pjDocs .row-line')).map((r, i) => ({
+    id: r.dataset.id || `DOC-${Date.now()}-${i}`,
+    name: r.querySelector('.dc-name').value.trim(),
+    type: r.querySelector('.dc-type').value.trim() || 'Document',
+    date: r.querySelector('.dc-date').value || new Date().toISOString().slice(0, 10),
+  })).filter((d) => d.name);
   const body = {
     name: $('#pjName').value, type: $('#pjType').value, status: $('#pjStatus').value,
     auditRef: $('#pjRef').value || undefined, progress: parseInt($('#pjProg').value, 10) || 0,
@@ -1014,29 +1154,60 @@ async function deleteProject(pid) {
 }
 
 /* ---- billing modal ---- */
+const invRow = (v = {}) => `
+  <div class="row-line" style="grid-template-columns:150px 120px 130px 1fr 44px" ${v.id ? `data-id="${esc(v.id)}"` : ''}>
+    <input type="date" class="iv-date" value="${esc(v.date || '')}">
+    <input type="number" min="0" step="0.01" class="iv-amount" value="${v.amount ?? ''}" placeholder="0.00">
+    <select class="iv-status">${['Paid', 'Due', 'Overdue'].map((s) => `<option ${v.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+    <input class="iv-desc" value="${esc(v.desc || '')}" placeholder="What it’s for — e.g. Annual membership">
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+  </div>`;
+function addInvRow() { addRowHTML('#blInvoices', invRow()); }
+
 function editBilling() {
   const u = ADMIN.full.user;
   const b = u.billing || { method: null, nextPayment: null, invoices: [] };
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
-    <div class="modal">
+    <div class="modal modal-lg">
       <button class="close" onclick="closeModal()">✕</button>
-      <h3 style="margin-bottom:16px">Billing — ${esc(u.name)}</h3>
+      <h3>Billing — ${esc(u.name)}</h3>
+      <p class="m-sub">This appears on the member’s Membership & Billing page. Invoice numbers are added automatically.</p>
       <div class="form-grid">
-        <div><label>Payment method</label><input id="blMethod" value="${esc(b.method || '')}" placeholder="e.g. Visa •••• 4821 / Invoice — 30 day terms"></div>
-        <div><label>Next payment</label><input id="blNext" value="${esc(b.nextPayment || '')}" placeholder="YYYY-MM-DD"></div>
-        <div style="grid-column:1/-1"><label>Invoices — JSON [{"id":"INV-2026-0001","date":"2026-07-01","amount":500,"status":"Paid","desc":"…"}]</label>
-          <textarea id="blInvoices" style="width:100%;height:160px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:2px;padding:10px">${esc(JSON.stringify(b.invoices || [], null, 2))}</textarea></div>
+        <div><label>Payment method</label><input id="blMethod" value="${esc(b.method || '')}" placeholder="e.g. Visa •••• 4821, or leave blank for free plans"></div>
+        <div><label>Next payment date</label><input id="blNext" type="date" value="${esc(b.nextPayment || '')}"></div>
       </div>
-      <button class="btn btn-primary" style="margin-top:18px" onclick="saveBilling()">Save billing</button>
+
+      <div class="m-section"><h4>Invoices</h4><span class="m-hint">Most recent first is fine — we sort by date</span></div>
+      <div class="row-head" style="grid-template-columns:150px 120px 130px 1fr 44px"><span>Date</span><span>Amount (£)</span><span>Status</span><span>Description</span><span></span></div>
+      <div class="row-editor" id="blInvoices">${(b.invoices || []).map((v) => invRow(v)).join('')}</div>
+      <button type="button" class="row-add" onclick="addInvRow()">+ Add an invoice</button>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveBilling()">Save billing</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
     </div>
   </div>`;
 }
 
 async function saveBilling() {
-  let invoices;
-  try { invoices = JSON.parse($('#blInvoices').value || '[]'); } catch { return toast('Invoices must be valid JSON'); }
-  if (!Array.isArray(invoices)) return toast('Invoices must be a JSON array');
+  const seen = {};
+  const invoices = Array.from(document.querySelectorAll('#blInvoices .row-line')).map((r) => {
+    const date = r.querySelector('.iv-date').value || new Date().toISOString().slice(0, 10);
+    let autoId = `INV-${date.slice(0, 4)}-${date.slice(5, 7)}${date.slice(8, 10)}`;
+    if (seen[autoId]) autoId += `-${++seen[autoId]}`; else seen[autoId] = 1;
+    const inv = {
+      id: r.dataset.id || autoId,
+      date,
+      amount: parseFloat(r.querySelector('.iv-amount').value) || 0,
+      status: r.querySelector('.iv-status').value,
+    };
+    const desc = r.querySelector('.iv-desc').value.trim();
+    if (desc) inv.desc = desc;
+    return inv;
+  }).filter((v) => v.amount || v.desc)
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const body = { billing: {
     method: $('#blMethod').value || null,
     nextPayment: $('#blNext').value || null,
