@@ -4,7 +4,7 @@
       "id": "PRJ-3001",
       "userId": "u3",
       "name": "Copeland Park Workshop Refit",
-      "type": "Community project",
+      "type": "Reuse project",
       "status": "In progress",
       "started": "2026-06-10",
       "target": "2026-08-15",
@@ -21,7 +21,7 @@
       "id": "PRJ-3002",
       "userId": "u3",
       "name": "Community Hall Stage Build",
-      "type": "Community project",
+      "type": "Reuse project",
       "status": "Planning",
       "started": "2026-07-08",
       "target": "2026-10-01",
@@ -35,18 +35,18 @@
       "id": "PRJ-4001",
       "userId": "u4",
       "name": "88 Leadenhall Street — Floors 3–5 Strip-Out",
-      "type": "Pre-demolition audit + donation",
+      "type": "Pre-refurbishment audit",
       "status": "Complete",
       "started": "2026-05-20",
       "target": "2026-06-28",
-      "summary": "GLA-compliant pre-demolition audit and full strip-out with Lawmens. 1,440 items rehomed via the online warehouse.",
+      "summary": "Pre-refurbishment audit and full strip-out with Lawmens. 1,440 items rehomed via the online warehouse.",
       "progress": 100,
       "carbonSavedKg": 2118.0,
       "auditRef": "AUD-2026-088",
       "documents": [
-        { "id": "DOC-4001-1", "name": "Pre-demolition audit — 88 Leadenhall St.pdf", "type": "GLA pre-demolition audit", "date": "2026-05-30" },
+        { "id": "DOC-4001-1", "name": "Pre-refurbishment audit — 88 Leadenhall St.pdf", "type": "Pre-refurbishment audit", "date": "2026-05-30" },
         { "id": "DOC-4001-2", "name": "Resource management plan v2.pdf", "type": "Resource management plan", "date": "2026-06-05" },
-        { "id": "DOC-4001-3", "name": "Circular economy statement.pdf", "type": "Circular economy statement", "date": "2026-06-05" },
+        { "id": "DOC-4001-3", "name": "Circular economy report.pdf", "type": "Circular economy report", "date": "2026-06-05" },
         { "id": "DOC-4001-4", "name": "Waste transfer & reuse report.pdf", "type": "Waste report", "date": "2026-06-30" },
         { "id": "DOC-4001-5", "name": "Verified carbon statement (Alphacello).pdf", "type": "Verified carbon report", "date": "2026-07-04" }
       ]
@@ -55,7 +55,7 @@
       "id": "PRJ-4002",
       "userId": "u4",
       "name": "Moorgate EC2 — Bank Office Deconstruction",
-      "type": "Pre-demolition audit + donation",
+      "type": "Pre-refurbishment audit",
       "status": "In progress",
       "started": "2026-06-30",
       "target": "2026-08-08",
@@ -64,7 +64,7 @@
       "carbonSavedKg": 10235.0,
       "auditRef": "AUD-2026-094",
       "documents": [
-        { "id": "DOC-4002-1", "name": "Pre-demolition audit — Moorgate EC2.pdf", "type": "GLA pre-demolition audit", "date": "2026-07-06" },
+        { "id": "DOC-4002-1", "name": "Pre-refurbishment audit — Moorgate EC2.pdf", "type": "Pre-refurbishment audit", "date": "2026-07-06" },
         { "id": "DOC-4002-2", "name": "Draft resource management plan.pdf", "type": "Resource management plan", "date": "2026-07-10" }
       ]
     },
