@@ -1086,7 +1086,7 @@ const docRow = (d = {}) => `
   </div>`;
 function addDocRow() { addRowHTML('#pjDocs', docRow()); }
 
-const PROJECT_TYPES = ['Pre-demolition audit', 'Pre-demolition audit + donation', 'Resource management plan', 'Circular economy statement', 'Office strip-out', 'Donation programme', 'Community project', 'Home renovation'];
+const PROJECT_TYPES = ['Pre-demolition audit', 'Pre-demolition audit + donation', 'Resource management plan', 'Circular economy statement', 'Strip-out', 'Donation programme', 'Community project', 'Home renovation'];
 
 function projectModal(pid) {
   const p = (pid && ADMIN.full.projects.find((x) => x.id === pid)) || {};
