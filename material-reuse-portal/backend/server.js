@@ -296,7 +296,7 @@ async function api(req, res, url) {
           id: `PRJ-${projectSeq++}`,
           userId: u.id,
           name: b.name || 'New project',
-          type: b.type || 'Community project',
+          type: b.type || 'Pre-refurbishment audit',
           status: b.status || 'Planning',
           auditRef: b.auditRef || undefined,
           started: b.started || new Date().toISOString().slice(0, 10),
