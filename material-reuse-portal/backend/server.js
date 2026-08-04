@@ -1,5 +1,5 @@
 /**
- * Material Reuse â€” Member Portal API
+ * Material Reuse — Member Portal API
  * Zero-dependency Node.js server (no npm install needed).
  *
  * Run:  node backend/server.js   (from the project root)
@@ -7,7 +7,7 @@
  *
  * Real authentication:
  *  - Accounts live in backend/data/users.json (salted PBKDF2 password hashes).
- *  - There is NO self-registration â€” only admins can create accounts.
+ *  - There is NO self-registration — only admins can create accounts.
  *  - Admins (role: "admin") manage members, their stats and carbon data.
  */
 const http = require('http');
@@ -153,7 +153,7 @@ async function api(req, res, url) {
     return json(res, 200, { ok: true });
   }
 
-  /* ============ ADMIN â€” member management ============ */
+  /* ============ ADMIN — member management ============ */
   if (parts[1] === 'admin') {
     if (!isAdmin) return json(res, 403, { error: 'Admin access required.' });
 
@@ -161,7 +161,7 @@ async function api(req, res, url) {
     if (req.method === 'GET' && url.pathname === '/api/admin/members') {
       const members = db.users.filter((u) => u.role !== 'admin').map((u) => ({
         ...safeUser(u),
-        tierName: tierOf(u) ? tierOf(u).name : 'â€”',
+        tierName: tierOf(u) ? tierOf(u).name : '—',
         orders: db.orders.filter((o) => o.userId === u.id).length,
         lists: db.lists.filter((l) => l.userId === u.id).length,
       }));
@@ -169,7 +169,7 @@ async function api(req, res, url) {
       return json(res, 200, { members, admins, tiers: db.tiers });
     }
 
-    // POST /api/admin/members â€” create account (the ONLY way accounts are made)
+    // POST /api/admin/members — create account (the ONLY way accounts are made)
     if (req.method === 'POST' && url.pathname === '/api/admin/members') {
       const b = await readBody(req);
       if (!b.name || !b.email || !b.password)
@@ -255,7 +255,7 @@ async function api(req, res, url) {
       const u = userById(parts[3]);
       if (!u) return json(res, 404, { error: 'Member not found' });
 
-      // GET /api/admin/members/:id/full â€” everything visible on their account
+      // GET /api/admin/members/:id/full — everything visible on their account
       if (req.method === 'GET' && parts[4] === 'full') {
         return json(res, 200, {
           user: safeUser(u),
@@ -267,7 +267,7 @@ async function api(req, res, url) {
         });
       }
 
-      // POST /api/admin/members/:id/orders â€” log an order / donation lot
+      // POST /api/admin/members/:id/orders — log an order / donation lot
       if (req.method === 'POST' && parts[4] === 'orders') {
         const b = await readBody(req);
         const order = {
@@ -276,7 +276,7 @@ async function api(req, res, url) {
           type: b.type || undefined,
           placed: b.placed || new Date().toISOString().slice(0, 10),
           status: b.status || 'Reserved',
-          fulfilment: b.fulfilment || 'Collection â€” Material Reuse warehouse',
+          fulfilment: b.fulfilment || 'Collection — Material Reuse warehouse',
           slot: b.slot || 'Slot to be confirmed',
           items: Array.isArray(b.items) ? b.items : [],
           total: b.total !== undefined ? +b.total : undefined,
@@ -290,7 +290,7 @@ async function api(req, res, url) {
         return json(res, 201, { order });
       }
 
-      // POST /api/admin/members/:id/projects â€” log a project / audit
+      // POST /api/admin/members/:id/projects — log a project / audit
       if (req.method === 'POST' && parts[4] === 'projects') {
         const b = await readBody(req);
         const project = {
@@ -327,7 +327,7 @@ async function api(req, res, url) {
         return json(res, 200, { report: db.carbon[u.id] || null });
       }
 
-      // PUT /api/admin/members/:id/carbon â€” replace the carbon report
+      // PUT /api/admin/members/:id/carbon — replace the carbon report
       if (req.method === 'PUT' && parts[4] === 'carbon') {
         const b = await readBody(req);
         if (!b || typeof b !== 'object' || Array.isArray(b))
@@ -338,7 +338,7 @@ async function api(req, res, url) {
         return json(res, 200, { report: db.carbon[u.id] });
       }
 
-      // PATCH /api/admin/members/:id â€” edit anything personalised
+      // PATCH /api/admin/members/:id — edit anything personalised
       if (req.method === 'PATCH' && !parts[4]) {
         if (u.role === 'admin' && u.id !== actor.id)
           return json(res, 403, { error: 'Admins can only be edited by themselves.' });
@@ -358,7 +358,7 @@ async function api(req, res, url) {
 
       // DELETE /api/admin/members/:id
       if (req.method === 'DELETE' && !parts[4]) {
-        if (u.role === 'admin') return json(res, 403, { error: 'Admin accounts canâ€™t be deleted here.' });
+        if (u.role === 'admin') return json(res, 403, { error: 'Admin accounts can’t be deleted here.' });
         db.users = db.users.filter((x) => x.id !== u.id);
         delete db.carbon[u.id];
         for (const [t, uid] of SESSIONS) if (uid === u.id) SESSIONS.delete(t);
@@ -379,7 +379,7 @@ async function api(req, res, url) {
     return json(res, 200, { tiers: db.tiers });
   }
 
-  // GET /api/users/:id â€” own profile (or any, for admins)
+  // GET /api/users/:id — own profile (or any, for admins)
   if (req.method === 'GET' && parts[1] === 'users' && parts[2]) {
     if (!isAdmin && parts[2] !== actor.id) return json(res, 403, { error: 'Forbidden' });
     const u = userById(parts[2]);
@@ -387,7 +387,7 @@ async function api(req, res, url) {
     return json(res, 200, { user: safeUser(u), tier: tierOf(u) });
   }
 
-  // PATCH /api/users/:id â€” update own profile / notifications
+  // PATCH /api/users/:id — update own profile / notifications
   if (req.method === 'PATCH' && parts[1] === 'users' && parts[2]) {
     if (!isAdmin && parts[2] !== actor.id) return json(res, 403, { error: 'Forbidden' });
     const u = userById(parts[2]);
@@ -418,7 +418,7 @@ async function api(req, res, url) {
     });
   }
 
-  // GET /api/inventory/:sku â€” full product passport
+  // GET /api/inventory/:sku — full product passport
   if (req.method === 'GET' && parts[1] === 'inventory' && parts[2]) {
     const item = db.inventory.find((i) => i.sku === parts[2]);
     if (!item) return json(res, 404, { error: 'Item not found' });
@@ -431,7 +431,7 @@ async function api(req, res, url) {
     return json(res, 200, { orders: db.orders.filter((o) => o.userId === uid) });
   }
 
-  // POST /api/orders â€” reserve items { items:[{sku,qty}], fulfilment }
+  // POST /api/orders — reserve items { items:[{sku,qty}], fulfilment }
   if (req.method === 'POST' && url.pathname === '/api/orders') {
     const body = await readBody(req);
     const u = userById(scopeUid(body.userId));
@@ -449,7 +449,7 @@ async function api(req, res, url) {
       return { sku: item.sku, title: item.title, qty, price: item.price,
                carbon: item.carbonSavedKgPerUnit * qty };
     }).filter(Boolean);
-    if (!lines.length) return json(res, 400, { error: 'No reservable items â€” this item may already be reserved.' });
+    if (!lines.length) return json(res, 400, { error: 'No reservable items — this item may already be reserved.' });
     const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
     const discount = gates.memberDiscount ? subtotal * gates.memberDiscount / 100 : 0;
     const order = {
@@ -457,8 +457,8 @@ async function api(req, res, url) {
       userId: u.id,
       placed: new Date().toISOString().slice(0, 10),
       status: 'Reserved',
-      fulfilment: body.fulfilment || 'Collection â€” Material Reuse warehouse',
-      slot: 'Slot to be confirmed â€” weâ€™ll be in touch',
+      fulfilment: body.fulfilment || 'Collection — Material Reuse warehouse',
+      slot: 'Slot to be confirmed — we’ll be in touch',
       items: lines.map(({ carbon, ...l }) => l),
       total: +(subtotal - discount).toFixed(2),
       memberDiscount: +discount.toFixed(2) || undefined,
@@ -484,7 +484,7 @@ async function api(req, res, url) {
     return json(res, 200, { lists });
   }
 
-  // POST /api/lists â€” create { name }
+  // POST /api/lists — create { name }
   if (req.method === 'POST' && url.pathname === '/api/lists') {
     const body = await readBody(req);
     const u = userById(scopeUid(body.userId));
@@ -501,7 +501,7 @@ async function api(req, res, url) {
     return json(res, 201, { list });
   }
 
-  // POST /api/lists/:id/items â€” add { sku, qty }
+  // POST /api/lists/:id/items — add { sku, qty }
   if (req.method === 'POST' && parts[1] === 'lists' && parts[3] === 'items') {
     const list = db.lists.find((l) => l.id === parts[2]);
     if (!list) return json(res, 404, { error: 'List not found' });
@@ -546,8 +546,9 @@ async function api(req, res, url) {
 
 // ---------- static frontend ----------
 const MIME = {
-  '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
-  '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json',
+  '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml',
+  '.png': 'image/png', '.json': 'application/json; charset=utf-8',
   '.woff2': 'font/woff2', '.ico': 'image/x-icon',
 };
 
@@ -560,7 +561,7 @@ function serveStatic(res, urlPath) {
       // SPA fallback
       fs.readFile(path.join(FRONTEND_DIR, 'index.html'), (e2, index) => {
         if (e2) { res.writeHead(404); return res.end('Not found'); }
-        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(index);
       });
       return;
@@ -589,7 +590,7 @@ http.createServer(async (req, res) => {
   }
 }).listen(PORT, () => {
   console.log('');
-  console.log('  material reuse â€” member portal');
-  console.log(`  â†’ http://localhost:${PORT}`);
+  console.log('  material reuse — member portal');
+  console.log(`  → http://localhost:${PORT}`);
   console.log('');
 });
