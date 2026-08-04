@@ -11,11 +11,15 @@
       "organisation": "Material Reuse Group",
       "phone": "01932 867989",
       "address": null,
-      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": false },
+      "notifications": {
+        "newStock": true,
+        "orderUpdates": true,
+        "newsletter": false
+      },
       "auth": {
-        "salt": "b9db17231f63f177232a479bb9d742c7",
-        "hash": "794ec4f90a459ea3f3ef40317936868c2db12c4f3c88e753bd0f58dd67931ebc",
-        "mustChange": true
+        "salt": "27fdd99b378e96046e63a0e71bfdf680",
+        "hash": "8ea0092d7f02e25cc685245abc0ae78503f674d9c60ec6b9a18d2a6fe64ee844",
+        "mustChange": false
       }
     },
     {
@@ -29,11 +33,15 @@
       "organisation": "Material Reuse Group",
       "phone": "01932 867989",
       "address": null,
-      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": false },
+      "notifications": {
+        "newStock": true,
+        "orderUpdates": true,
+        "newsletter": false
+      },
       "auth": {
-        "salt": "5b225ddc557e0ab634fc3012b8ccf21e",
-        "hash": "6d1ea5f6c8c07787ae41ca496b43040a02274d6c87c040e25a539d7176965952",
-        "mustChange": true
+        "salt": "597eb1fa59c8a067d8a77924bf65e813",
+        "hash": "648307d8dc0aa045a0ea38d50573b9dad7d0846fd51b32f44c0d698e3d3a0cac",
+        "mustChange": false
       }
     },
     {
@@ -49,8 +57,16 @@
       "address": "42 Fernhead Road, London W9 3EL",
       "carbonSavedKg": 46.2,
       "itemsRehomed": 6,
-      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": true },
-      "billing": { "method": null, "nextPayment": null, "invoices": [] },
+      "notifications": {
+        "newStock": true,
+        "orderUpdates": true,
+        "newsletter": true
+      },
+      "billing": {
+        "method": null,
+        "nextPayment": null,
+        "invoices": []
+      },
       "auth": {
         "salt": "be2adc8e7b825dca441a2308e1d0464d",
         "hash": "f9ce2796a457696f49106be08d2ea3c65daaa847a37d5baad21aa7236cf5c046",
@@ -70,12 +86,22 @@
       "address": "18 Cressington Grove, London SE22 8PF",
       "carbonSavedKg": 312.8,
       "itemsRehomed": 41,
-      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": false },
+      "notifications": {
+        "newStock": true,
+        "orderUpdates": true,
+        "newsletter": false
+      },
       "billing": {
         "method": "Visa •••• 4821",
         "nextPayment": "2026-11-02",
         "invoices": [
-          { "id": "INV-2025-1102", "date": "2025-11-02", "amount": 500.0, "status": "Paid", "desc": "Domestic Plus Membership — Annual (Nov 2025 – Nov 2026)" }
+          {
+            "id": "INV-2025-1102",
+            "date": "2025-11-02",
+            "amount": 500,
+            "status": "Paid",
+            "desc": "Domestic Plus Membership — Annual (Nov 2025 – Nov 2026)"
+          }
         ]
       },
       "auth": {
@@ -97,8 +123,16 @@
       "address": "Unit 4, Copeland Park, 133 Copeland Road, London SE15 3SN",
       "carbonSavedKg": 2140.5,
       "itemsRehomed": 287,
-      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": true },
-      "billing": { "method": null, "nextPayment": null, "invoices": [] },
+      "notifications": {
+        "newStock": true,
+        "orderUpdates": true,
+        "newsletter": true
+      },
+      "billing": {
+        "method": null,
+        "nextPayment": null,
+        "invoices": []
+      },
       "auth": {
         "salt": "be2adc8e7b825dca441a2308e1d0464d",
         "hash": "f9ce2796a457696f49106be08d2ea3c65daaa847a37d5baad21aa7236cf5c046",
@@ -116,17 +150,43 @@
       "organisation": "Garnetfield Workspace Group",
       "phone": "020 3011 8890",
       "address": "Level 12, 1 Angel Court, London EC2R 7HJ",
-      "carbonSavedKg": 48720.0,
+      "carbonSavedKg": 48720,
       "itemsRehomed": 3860,
-      "accountManager": { "name": "Ellie Marsh", "email": "hello@material-reuse.co.uk", "phone": "01932 867989" },
-      "notifications": { "newStock": true, "orderUpdates": true, "newsletter": true },
+      "accountManager": {
+        "name": "Ellie Marsh",
+        "email": "hello@material-reuse.co.uk",
+        "phone": "01932 867989"
+      },
+      "notifications": {
+        "newStock": true,
+        "orderUpdates": true,
+        "newsletter": true
+      },
       "billing": {
         "method": "Invoice — 30 day terms (PO required)",
         "nextPayment": "2027-06-30",
         "invoices": [
-          { "id": "INV-2026-0655", "date": "2026-06-30", "amount": 10000.0, "status": "Paid", "desc": "Corporate Reuse Partnership — Annual (Jun 2026 – Jun 2027)" },
-          { "id": "INV-2026-0641", "date": "2026-06-12", "amount": 1850.0, "status": "Paid", "desc": "Pre-refurbishment audit — Angel Court (Floors 10–12)" },
-          { "id": "INV-2026-0512", "date": "2026-05-21", "amount": 640.0, "status": "Overdue", "desc": "Verified carbon report — Q1 2026 donations" }
+          {
+            "id": "INV-2026-0655",
+            "date": "2026-06-30",
+            "amount": 10000,
+            "status": "Paid",
+            "desc": "Corporate Reuse Partnership — Annual (Jun 2026 – Jun 2027)"
+          },
+          {
+            "id": "INV-2026-0641",
+            "date": "2026-06-12",
+            "amount": 1850,
+            "status": "Paid",
+            "desc": "Pre-refurbishment audit — Angel Court (Floors 10–12)"
+          },
+          {
+            "id": "INV-2026-0512",
+            "date": "2026-05-21",
+            "amount": 640,
+            "status": "Overdue",
+            "desc": "Verified carbon report — Q1 2026 donations"
+          }
         ]
       },
       "auth": {
