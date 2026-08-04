@@ -1,15 +1,17 @@
 /* =====================================================================
-   material reuse — member portal (frontend app)
+   material reuse â€” member portal (frontend app)
    ===================================================================== */
 
 const API = '';
 let state = { user: null, tier: null, page: 'dashboard' };
 
 const $ = (sel) => document.querySelector(sel);
-const fmtGBP = (n) => '£' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtGBP = (n) => 'Â£' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtKg = (n) => n >= 1000 ? (n / 1000).toLocaleString('en-GB', { maximumFractionDigits: 1 }) + ' t' : Number(n).toLocaleString('en-GB', { maximumFractionDigits: 1 }) + ' kg';
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'â€”';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const FREE_TIERS = ['domestic-free', 'community'];
+const isFreeTier = (t) => FREE_TIERS.includes(t);
 
 let TOKEN = localStorage.getItem('mrToken') || null;
 function setToken(t) {
@@ -28,7 +30,7 @@ async function api(path, opts = {}) {
   });
   if (res.status === 401 && path !== '/api/auth/login') {
     setToken(null); showLogin();
-    throw new Error('Session expired — please sign in again.');
+    throw new Error('Session expired â€” please sign in again.');
   }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
@@ -46,7 +48,7 @@ const statusPill = (s) => {
   const map = {
     'Reserved': 'pill-blue', 'Ready for collection': 'pill-green', 'Awaiting collection': 'pill-yellow',
     'Collected': 'pill-green', 'Delivered': 'pill-green', 'Passports issued': 'pill-navy',
-    'Logged — emission assessment': 'pill-orange', 'Paid': 'pill-green', 'Overdue': 'pill-red',
+    'Logged â€” emission assessment': 'pill-orange', 'Paid': 'pill-green', 'Overdue': 'pill-red',
     'Available': 'pill-green', 'Pending': 'pill-yellow',
     'In progress': 'pill-blue', 'Planning': 'pill-yellow', 'Complete': 'pill-green',
   };
@@ -63,7 +65,7 @@ function showLogin() {
 async function doLogin(ev) {
   ev.preventDefault();
   const btn = $('#loginBtn'), err = $('#loginError');
-  btn.disabled = true; btn.textContent = 'Signing in…'; err.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Signing inâ€¦'; err.classList.remove('show');
   try {
     const { token, user, tier } = await api('/api/auth/login', {
       method: 'POST',
@@ -87,7 +89,7 @@ function enterApp(user, tier) {
   else { badge.textContent = tier.name; badge.className = 'tier-badge tier-' + tier.id; }
   renderNav();
   go(user.role === 'admin' ? 'adminOverview' : 'dashboard');
-  if (user.mustChange) toast('You’re on a temporary password — change it in Account Settings');
+  if (user.mustChange) toast('Youâ€™re on a temporary password â€” change it in Account Settings');
 }
 
 async function logout() {
@@ -133,7 +135,7 @@ async function go(page) {
   const meta = pagesFor().find((p) => p.id === page) || HIDDEN_PAGES[page];
   $('#pageTitle').textContent = meta.label;
   $('#pageCrumb').textContent = `${state.user && state.user.role === 'admin' ? 'Admin portal' : 'Member portal'} / ${meta.label}`;
-  $('#view').innerHTML = '<div class="empty">Loading…</div>';
+  $('#view').innerHTML = '<div class="empty">Loadingâ€¦</div>';
   try { await RENDER[page](); } catch (e) { $('#view').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
   window.scrollTo(0, 0);
 }
@@ -141,7 +143,7 @@ async function go(page) {
 function upgradeNote(feature, needed) {
   return `<div class="upgrade-note">
     <h3>${esc(feature)} is a ${esc(needed)} feature</h3>
-    <p>Upgrade your membership to unlock ${esc(feature.toLowerCase())} — and keep more materials moving from ‘waste’ to worth.</p>
+    <p>Upgrade your membership to unlock ${esc(feature.toLowerCase())} â€” and keep more materials moving from â€˜wasteâ€™ to worth.</p>
     <button class="btn btn-green" onclick="go('membership')">View membership options</button>
   </div>`;
 }
@@ -161,13 +163,13 @@ RENDER.dashboard = async () => {
 
   $('#view').innerHTML = `
     <div class="tagline-strip">
-      <span>Welcome back, ${esc(u.name.split(' ')[0])} — from ‘waste’ to worth.</span>
+      <span>Welcome back, ${esc(u.name.split(' ')[0])} â€” from â€˜wasteâ€™ to worth.</span>
       <button class="btn btn-green btn-sm" onclick="go('warehouse')">Browse the warehouse</button>
     </div>
 
     <div class="grid cols-4" style="margin-top:18px">
       <div class="card stat"><span class="stripe" style="background:var(--green)"></span>
-        <div class="lbl">Carbon saved</div><div class="big">${fmtKg(u.carbonSavedKg)} <span style="font-size:14px">CO₂e</span></div>
+        <div class="lbl">Carbon saved</div><div class="big">${fmtKg(u.carbonSavedKg)} <span style="font-size:14px">COâ‚‚e</span></div>
         <div class="sub">${g.carbonReports === 'verified' ? 'Verified by Alphacello' : 'Estimated from product passports'}</div></div>
       <div class="card stat"><span class="stripe" style="background:var(--azul)"></span>
         <div class="lbl">Items rehomed</div><div class="big">${u.itemsRehomed.toLocaleString('en-GB')}</div>
@@ -185,15 +187,15 @@ RENDER.dashboard = async () => {
         <h3 style="margin-bottom:12px">Next collections & deliveries</h3>
         ${active.length ? active.slice(0, 3).map((o) => `
           <div class="doc-row">
-            <span class="t">${esc(o.id)} — ${esc(o.fulfilment)}<span>${esc(o.slot)}</span></span>
-            ${statusPill(o.status)}</div>`).join('') : '<div class="empty">Nothing scheduled — browse the warehouse to get started.</div>'}
+            <span class="t">${esc(o.id)} â€” ${esc(o.fulfilment)}<span>${esc(o.slot)}</span></span>
+            ${statusPill(o.status)}</div>`).join('') : '<div class="empty">Nothing scheduled â€” browse the warehouse to get started.</div>'}
       </div>
       <div class="card">
         <h3 style="margin-bottom:12px">${g.projects ? 'Your projects' : 'Why membership matters'}</h3>
         ${g.projects
           ? (prj.projects.length ? prj.projects.slice(0, 3).map((p) => `
               <div class="doc-row">
-                <span class="t">${esc(p.name)}<span>${esc(p.type)} · target ${fmtDate(p.target)}</span></span>
+                <span class="t">${esc(p.name)}<span>${esc(p.type)} Â· target ${fmtDate(p.target)}</span></span>
                 ${statusPill(p.status)}</div>`).join('') : '<div class="empty">No projects yet.</div>')
           : `<p class="small muted" style="margin-bottom:14px">Every reused item keeps embodied carbon locked in and materials out of landfill. Upgrade to unlock carbon reports, project workspaces and more.</p>
              <button class="btn btn-primary btn-sm" onclick="go('membership')">Explore membership tiers</button>`}
@@ -208,12 +210,12 @@ function itemCard(i) {
   return `<div class="item-card">
     <div class="item-thumb"><span class="thumb-cat">${esc(i.category)}</span>
       <span class="early">${statusPill(i.status)}</span>
-      <span class="qty">×${i.quantity.toLocaleString('en-GB')}</span>
+      <span class="qty">Ã—${i.quantity.toLocaleString('en-GB')}</span>
     </div>
     <div class="item-body">
       <h4>${esc(i.title)}</h4>
-      <div class="item-meta">${esc(i.category)} · ${esc(i.fulfilment)}</div>
-      <div class="item-carbon">${i.carbonSavedKgPerUnit} kg CO₂e saved</div>
+      <div class="item-meta">${esc(i.category)} Â· ${esc(i.fulfilment)}</div>
+      <div class="item-carbon">${i.carbonSavedKgPerUnit} kg COâ‚‚e saved</div>
       <div class="item-foot">
         <div class="item-price">${fmtGBP(i.price)} <span>${esc(i.priceUnit)}</span></div>
         <button class="btn btn-ghost btn-sm" onclick="openPassport('${i.sku}')">Passport</button>
@@ -233,8 +235,8 @@ RENDER.warehouse = async () => {
               width:210px; height:64px; background:#ffffff;"></div>
 </div>
     <div class="card" style="margin-top:28px">
-      <h3 style="margin-bottom:6px">Can’t see what you need? Join the wishlist</h3>
-      <p class="small muted" style="margin-bottom:14px">Tell us what you’re after and we’ll let you know when it comes through a strip-out.</p>
+      <h3 style="margin-bottom:6px">Canâ€™t see what you need? Join the wishlist</h3>
+      <p class="small muted" style="margin-bottom:14px">Tell us what youâ€™re after and weâ€™ll let you know when it comes through a strip-out.</p>
       <iframe class="airtable-embed" src="https://airtable.com/embed/appiHCw9vidbsic9y/pagMtURovTN6nNryp/form?prefill_Status=Active&hide_Status=true" frameborder="0" onmousewheel="" width="100%" height="720" style="background: transparent; border: 1px solid #ccc;"></iframe>
     </div>`;
 };
@@ -254,12 +256,12 @@ async function openPassport(sku) {
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
-      <button class="close" onclick="closeModal()">✕</button>
-      ${statusPill(i.status)} <span class="pill ${i.passportVerified ? 'pill-green' : 'pill-yellow'}">${i.passportVerified ? '✓ Product passport verified' : 'Passport being finalised'}</span>
+      <button class="close" onclick="closeModal()">âœ•</button>
+      ${statusPill(i.status)} <span class="pill ${i.passportVerified ? 'pill-green' : 'pill-yellow'}">${i.passportVerified ? 'âœ“ Product passport verified' : 'Passport being finalised'}</span>
       <div class="passport-head" style="margin-top:14px">
         <div class="passport-tile">${esc(i.category)}</div>
         <div><h3 style="font-size:17px;line-height:1.3">${esc(i.title)}</h3>
-        <p class="small muted">${esc(i.category)} · SKU ${esc(i.sku)}</p></div>
+        <p class="small muted">${esc(i.category)} Â· SKU ${esc(i.sku)}</p></div>
       </div>
       <div class="passport-grid">
         <div class="f"><b>Availability</b><span>${esc(i.status)}</span></div>
@@ -267,13 +269,13 @@ async function openPassport(sku) {
         <div class="f"><b>Price</b><span>${fmtGBP(i.price)} ${esc(i.priceUnit)}</span></div>
         <div class="f"><b>Fulfilment</b><span>${esc(i.fulfilment)}</span></div>
         <div class="f"><b>Category</b><span>${esc(i.category)}</span></div>
-        <div class="f"><b>Carbon saved by reuse</b><span style="color:#1d7a05;font-weight:700">${i.carbonSavedKgPerUnit} kg CO₂e</span></div>
+        <div class="f"><b>Carbon saved by reuse</b><span style="color:#1d7a05;font-weight:700">${i.carbonSavedKgPerUnit} kg COâ‚‚e</span></div>
       </div>
-      ${i.status === 'Pending' ? '<p class="small muted">Pending — this item is from a recent strip-out and is being processed into the warehouse. Visible early thanks to Priority Stock Access.</p>' : ''}
-      ${i.status === 'Reserved' ? '<p class="small muted">Reserved — this item is already reserved by another member.</p>' : ''}
+      ${i.status === 'Pending' ? '<p class="small muted">Pending â€” this item is from a recent strip-out and is being processed into the warehouse. Visible early thanks to Priority Stock Access.</p>' : ''}
+      ${i.status === 'Reserved' ? '<p class="small muted">Reserved â€” this item is already reserved by another member.</p>' : ''}
       <div class="qr-box">${fakeQR()}
         <div><b style="font-family:var(--font-head)">${esc(i.qrCode)}</b><br>
-        <span class="small" style="color:#B9C6E4">Scan on site to trace this item’s full material lifecycle.</span></div>
+        <span class="small" style="color:#B9C6E4">Scan on site to trace this itemâ€™s full material lifecycle.</span></div>
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
         <button class="btn btn-primary" ${canReserve ? '' : 'disabled'} onclick="reserveItem('${i.sku}')">
@@ -291,7 +293,7 @@ async function reserveItem(sku) {
   try {
     const { order } = await api('/api/orders', { method: 'POST', body: { userId: state.user.id, items: [{ sku, qty }] } });
     closeModal();
-    toast(`Reserved — order ${order.id} created`);
+    toast(`Reserved â€” order ${order.id} created`);
   } catch (e) { toast(e.message); }
 }
 
@@ -305,7 +307,7 @@ async function addToListPrompt(sku) {
   const qty = parseInt(prompt('Quantity?', '1'), 10) || 1;
   await api(`/api/lists/${list.id}/items`, { method: 'POST', body: { sku, qty } });
   closeModal();
-  toast(`Added to “${list.name}”`);
+  toast(`Added to â€œ${list.name}â€`);
 }
 
 /* ================= ORDERS ================= */
@@ -317,22 +319,22 @@ RENDER.orders = async () => {
     <div class="card order-card">
       <div class="order-head">
         <div><h4>${esc(o.id)}</h4>
-          <div class="meta">Placed ${fmtDate(o.placed)} · ${esc(o.fulfilment)}</div></div>
+          <div class="meta">Placed ${fmtDate(o.placed)} Â· ${esc(o.fulfilment)}</div></div>
         ${statusPill(o.status)}
       </div>
-      <div class="order-lines">${o.items.map((l) => `${l.qty} × ${esc(l.title)}`).join(' &nbsp;·&nbsp; ')}</div>
+      <div class="order-lines">${o.items.map((l) => `${l.qty} Ã— ${esc(l.title)}`).join(' &nbsp;Â·&nbsp; ')}</div>
       <div class="order-foot">
         <span><span class="k">Slot</span><b>${esc(o.slot)}</b></span>
         ${o.total ? `<span><span class="k">Total</span><b>${fmtGBP(o.total)}</b>${o.deliveryFee ? ` <span class="muted small">(+${fmtGBP(o.deliveryFee)} delivery)</span>` : ''}</span>` : ''}
-        ${o.memberDiscount ? `<span class="pill pill-green">member discount −${fmtGBP(o.memberDiscount)}</span>` : ''}
-        <span><span class="k">Carbon saved</span><b>${fmtKg(o.carbonSavedKg)} CO₂e</b></span>
+        ${o.memberDiscount ? `<span class="pill pill-green">member discount âˆ’${fmtGBP(o.memberDiscount)}</span>` : ''}
+        <span><span class="k">Carbon saved</span><b>${fmtKg(o.carbonSavedKg)} COâ‚‚e</b></span>
       </div>
       ${o.note ? `<p class="small muted" style="margin-top:8px">${esc(o.note)}</p>` : ''}
     </div>`;
 
   $('#view').innerHTML = `
-    ${buys.length ? buys.map(orderBlock).join('') : '<div class="card"><div class="empty">No orders yet — reserve items from the online warehouse.</div></div>'}
-    ${dons.length ? `<h3 class="section-title">Donation lots (materials you’ve sent us)</h3>${dons.map(orderBlock).join('')}` : ''}
+    ${buys.length ? buys.map(orderBlock).join('') : '<div class="card"><div class="empty">No orders yet â€” reserve items from the online warehouse.</div></div>'}
+    ${dons.length ? `<h3 class="section-title">Donation lots (materials youâ€™ve sent us)</h3>${dons.map(orderBlock).join('')}` : ''}
     <div class="card" style="margin-top:16px">
       <h3 style="margin-bottom:8px">Collections</h3>
       <p class="small muted">All collections are from our central London facility. Bring your order reference and QR codes will be scanned on handover. Need a hand loading? Call 01932 867989.</p>
@@ -346,17 +348,17 @@ RENDER.lists = async () => {
   const canAdd = g.shoppingListLimit === null || lists.length < g.shoppingListLimit;
   $('#view').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-      <p class="small muted">Plan each project’s materials, check live stock and see the carbon you’ll save.</p>
+      <p class="small muted">Plan each projectâ€™s materials, check live stock and see the carbon youâ€™ll save.</p>
       <button class="btn btn-primary" ${canAdd ? '' : 'disabled'} onclick="newList()">New project list</button>
     </div>
-    ${g.shoppingListLimit !== null ? `<p class="small" style="margin-bottom:14px"><span class="pill pill-yellow">Domestic Free</span> includes ${g.shoppingListLimit} list — upgrade for unlimited.</p>` : ''}
+    ${g.shoppingListLimit !== null ? `<p class="small" style="margin-bottom:14px"><span class="pill pill-yellow">Domestic Free</span> includes ${g.shoppingListLimit} list â€” upgrade for unlimited.</p>` : ''}
     ${lists.length ? lists.map((l) => {
       const total = l.items.reduce((s, i) => s + (i.price || 0) * i.qty, 0);
       const carbon = l.items.reduce((s, i) => s + (i.carbon || 0), 0);
       return `<div class="card" style="margin-bottom:16px">
         <div class="order-head">
-          <div><h4>${esc(l.name)}</h4><div class="meta">Created ${fmtDate(l.created)} · ${l.items.length} line${l.items.length === 1 ? '' : 's'}</div></div>
-          <div style="text-align:right"><b style="font-family:var(--font-head)">${fmtGBP(total)}</b><br><span class="small" style="color:var(--green-dark)">${fmtKg(carbon)} CO₂e saved</span></div>
+          <div><h4>${esc(l.name)}</h4><div class="meta">Created ${fmtDate(l.created)} Â· ${l.items.length} line${l.items.length === 1 ? '' : 's'}</div></div>
+          <div style="text-align:right"><b style="font-family:var(--font-head)">${fmtGBP(total)}</b><br><span class="small" style="color:var(--green-dark)">${fmtKg(carbon)} COâ‚‚e saved</span></div>
         </div>
         ${l.items.length ? `<table><tr><th>Item</th><th>Qty</th><th>Est. cost</th><th>Stock</th><th></th></tr>
           ${l.items.map((i) => `<tr>
@@ -365,7 +367,7 @@ RENDER.lists = async () => {
             <td>${fmtGBP((i.price || 0) * i.qty)}</td>
             <td>${i.inStock ? '<span class="pill pill-green">In stock</span>' : '<span class="pill pill-red">Short</span>'}</td>
             <td><button class="btn btn-ghost btn-sm" onclick="removeFromList('${l.id}','${i.sku}')">Remove</button></td>
-          </tr>`).join('')}</table>` : '<div class="empty">Empty list — add items from the warehouse.</div>'}
+          </tr>`).join('')}</table>` : '<div class="empty">Empty list â€” add items from the warehouse.</div>'}
       </div>`;
     }).join('') : '<div class="card"><div class="empty">No lists yet.</div></div>'}`;
 };
@@ -394,8 +396,8 @@ function carbonSection(r, g) {
     <h3 class="section-title" style="margin-top:32px">Carbon reporting</h3>
     <div class="grid cols-3">
       <div class="card stat"><span class="stripe" style="background:var(--green)"></span>
-        <div class="lbl">Total CO₂e avoided</div><div class="big">${fmtKg(r.totalSavedKg)}</div>
-        <div class="sub">${r.verified ? `✓ Verified — ${esc(r.verifier)}` : 'Estimated from product passport data'}</div></div>
+        <div class="lbl">Total COâ‚‚e avoided</div><div class="big">${fmtKg(r.totalSavedKg)}</div>
+        <div class="sub">${r.verified ? `âœ“ Verified â€” ${esc(r.verifier)}` : 'Estimated from product passport data'}</div></div>
       <div class="card stat"><span class="stripe" style="background:var(--azul)"></span>
         <div class="lbl">Equivalent car miles</div><div class="big">${r.equivalents.carMiles.toLocaleString('en-GB')}</div>
         <div class="sub">Average petrol car emissions</div></div>
@@ -406,7 +408,7 @@ function carbonSection(r, g) {
 
     <div class="grid cols-2" style="margin-top:18px">
       <div class="card">
-        <h3 style="margin-bottom:6px">Monthly savings (kg CO₂e)</h3>
+        <h3 style="margin-bottom:6px">Monthly savings (kg COâ‚‚e)</h3>
         <div class="bar-chart">
           ${r.monthly.map((m) => `<div class="bar">
             <span>${m.kg ? fmtKg(m.kg) : ''}</span>
@@ -424,17 +426,17 @@ function carbonSection(r, g) {
     </div>
 
     ${r.wlcaModules ? `<div class="card" style="margin-top:18px">
-      <h3 style="margin-bottom:10px">WLCA module breakdown (kg CO₂e)</h3>
+      <h3 style="margin-bottom:10px">WLCA module breakdown (kg COâ‚‚e)</h3>
       <table><tr><th>Module</th><th>Impact</th></tr>
         ${Object.entries(r.wlcaModules).map(([k, v]) => `<tr><td>${esc(k)}</td>
-          <td style="font-weight:700;color:${v < 0 ? '#B42318' : '#1d7a05'}">${v < 0 ? '+' : '−'}${fmtKg(Math.abs(v))}</td></tr>`).join('')}</table>
-      <p class="small muted" style="margin-top:10px">A1–A3 manufacture avoided by reuse; A4 transport added; Module D end-of-life benefits. Suitable for BREEAM Mat 06 / GLA circular economy reporting.</p>
+          <td style="font-weight:700;color:${v < 0 ? '#B42318' : '#1d7a05'}">${v < 0 ? '+' : 'âˆ’'}${fmtKg(Math.abs(v))}</td></tr>`).join('')}</table>
+      <p class="small muted" style="margin-top:10px">A1â€“A3 manufacture avoided by reuse; A4 transport added; Module D end-of-life benefits. Suitable for BREEAM Mat 06 / GLA circular economy reporting.</p>
     </div>` : ''}
 
     <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
       ${g.carbonReports === 'full' || g.carbonReports === 'verified'
-        ? `<button class="btn btn-primary" onclick="toast('Report queued — a PDF will land in your inbox shortly')">Download ${g.carbonReports === 'verified' ? 'verified' : ''} carbon report (PDF)</button>`
-        : `<button class="btn btn-ghost" disabled>Downloadable reports — Community tier and above</button>`}
+        ? `<button class="btn btn-primary" onclick="toast('Report queued â€” a PDF will land in your inbox shortly')">Download ${g.carbonReports === 'verified' ? 'verified' : ''} carbon report (PDF)</button>`
+        : `<button class="btn btn-ghost" disabled>Downloadable reports â€” Community tier and above</button>`}
     </div>`;
 }
 
@@ -449,22 +451,22 @@ RENDER.projects = async () => {
   $('#view').innerHTML = `
     ${g.audits ? `<div class="tagline-strip" style="margin-bottom:18px">
       <span>Need a pre-refurbishment audit? Your partner rate includes Lawmens strip-out at 5% off.</span>
-      <button class="btn btn-green btn-sm" onclick="toast('Request sent — your account manager will be in touch within one working day')">Request an audit</button>
+      <button class="btn btn-green btn-sm" onclick="toast('Request sent â€” your account manager will be in touch within one working day')">Request an audit</button>
     </div>` : ''}
     ${projects.length ? projects.map((p) => `
       <div class="card proj-card">
         <div class="order-head">
           <div><h4>${esc(p.name)}</h4>
-            <div class="meta">${esc(p.type)}${p.auditRef ? ` · Audit ref ${esc(p.auditRef)}` : ''} · ${fmtDate(p.started)} → ${fmtDate(p.target)}</div></div>
+            <div class="meta">${esc(p.type)}${p.auditRef ? ` Â· Audit ref ${esc(p.auditRef)}` : ''} Â· ${fmtDate(p.started)} â†’ ${fmtDate(p.target)}</div></div>
           ${statusPill(p.status)}
         </div>
         <p class="small" style="margin:6px 0 2px">${esc(p.summary)}</p>
         <div class="progress"><i style="width:${p.progress}%"></i></div>
-        <div class="small muted">${p.progress}% complete ${p.carbonSavedKg ? ` · ${fmtKg(p.carbonSavedKg)} CO₂e saved so far` : ''}</div>
+        <div class="small muted">${p.progress}% complete ${p.carbonSavedKg ? ` Â· ${fmtKg(p.carbonSavedKg)} COâ‚‚e saved so far` : ''}</div>
         ${p.documents.length ? `<h4 style="font-size:13px;margin:14px 0 4px">Documents</h4>
           ${p.documents.map((d) => `<div class="doc-row">
-            <span class="t">${esc(d.name)}<span>${esc(d.type)} · ${fmtDate(d.date)}</span></span>
-            <button class="btn btn-ghost btn-sm" onclick="toast('Downloading ${esc(d.name)}…')">Download</button></div>`).join('')}` : ''}
+            <span class="t">${esc(d.name)}<span>${esc(d.type)} Â· ${fmtDate(d.date)}</span></span>
+            <button class="btn btn-ghost btn-sm" onclick="toast('Downloading ${esc(d.name)}â€¦')">Download</button></div>`).join('')}` : ''}
       </div>`).join('') : '<div class="card"><div class="empty">No projects yet.</div></div>'}`;
 };
 
@@ -474,7 +476,7 @@ RENDER.membership = async () => {
   $('#view').innerHTML = `
     <h3 class="section-title">Membership plans</h3>
 <!-- ============================================================
-     Material Reuse — Softr pricing embed
+     Material Reuse â€” Softr pricing embed
      Paste this whole block into a WordPress "Custom HTML" block.
      HOW TO TUNE (only one number usually matters):
      - --crop  = how tall the visible area is. Raise/lower this so
@@ -487,7 +489,7 @@ RENDER.membership = async () => {
 <div class="mr-embed">
   <iframe
     class="mr-embed__frame"
-    src="https://jonah4725.softr.app/"
+    src="https://material-reuse-enquiry.softr.app/"
     title="Membership pricing and enquiry"
     loading="lazy"
     allow="clipboard-write"
@@ -530,16 +532,16 @@ RENDER.membership = async () => {
     <div class="grid cols-2">
       <div class="card">
         <h3 style="margin-bottom:10px">Payment</h3>
-        <p><b>Method:</b> ${esc(u.billing.method || 'None — free plan')}</p>
-        <p><b>Next payment:</b> ${u.billing.nextPayment ? fmtDate(u.billing.nextPayment) : '—'}</p>
-        ${state.user.accountManager ? `<p style="margin-top:10px"><b>Account manager:</b> ${esc(u.accountManager.name)} · <a href="mailto:${esc(u.accountManager.email)}">${esc(u.accountManager.email)}</a> · ${esc(u.accountManager.phone)}</p>` : ''}
+        <p><b>Method:</b> ${esc(u.billing.method || (isFreeTier(u.tier) ? 'None â€” free plan' : 'Being set up â€” your account manager will confirm your billing details'))}</p>
+        <p><b>Next payment:</b> ${u.billing.nextPayment ? fmtDate(u.billing.nextPayment) : 'â€”'}</p>
+        ${state.user.accountManager ? `<p style="margin-top:10px"><b>Account manager:</b> ${esc(u.accountManager.name)} Â· <a href="mailto:${esc(u.accountManager.email)}">${esc(u.accountManager.email)}</a> Â· ${esc(u.accountManager.phone)}</p>` : ''}
       </div>
       <div class="card">
         <h3 style="margin-bottom:10px">Invoices</h3>
         ${u.billing.invoices.length ? `<table><tr><th>Invoice</th><th>Date</th><th>Amount</th><th>Status</th></tr>
           ${u.billing.invoices.map((i) => `<tr><td>${esc(i.id)}<br><span class="small muted">${esc(i.desc)}</span></td>
             <td>${fmtDate(i.date)}</td><td>${fmtGBP(i.amount)}</td><td>${statusPill(i.status)}</td></tr>`).join('')}</table>`
-          : '<div class="empty">No invoices — you’re on the free plan.</div>'}
+          : `<div class="empty">${isFreeTier(u.tier) ? 'No invoices â€” youâ€™re on the free plan.' : 'No invoices yet.'}</div>`}
       </div>
     </div>`;
 };
@@ -557,14 +559,14 @@ RENDER.settings = async () => {
             <div><label>Full name</label><input id="sName" value="${esc(u.name)}"></div>
             <div><label>Email (sign-in)</label><input id="sEmail" value="${esc(u.email)}" disabled title="Contact the Material Reuse team to change your sign-in email"></div>
             <div><label>Phone</label><input id="sPhone" value="${esc(u.phone || '')}"></div>
-            <div><label>Organisation</label><input id="sOrg" value="${esc(u.organisation || '')}" placeholder="—"></div>
+            <div><label>Organisation</label><input id="sOrg" value="${esc(u.organisation || '')}" placeholder="â€”"></div>
             <div style="grid-column:1/-1"><label>Address</label><input id="sAddr" value="${esc(u.address || '')}"></div>
           </div>
           <button class="btn btn-primary" style="margin-top:16px" onclick="saveProfile()">Save changes</button>
         </div>
         <div class="card" style="margin-top:16px">
           <h3 style="margin-bottom:6px">Password</h3>
-          ${u.mustChange ? '<p class="small" style="color:#B42318;margin-bottom:10px">You’re using a temporary password — please set your own now.</p>' : ''}
+          ${u.mustChange ? '<p class="small" style="color:#B42318;margin-bottom:10px">Youâ€™re using a temporary password â€” please set your own now.</p>' : ''}
           <div class="form-grid">
             <div style="grid-column:1/-1"><label>Current password</label><input id="pwCurrent" type="password" autocomplete="current-password"></div>
             <div><label>New password</label><input id="pwNext" type="password" autocomplete="new-password"></div>
@@ -606,7 +608,7 @@ async function saveProfile() {
 async function changePassword() {
   const current = $('#pwCurrent').value, next = $('#pwNext').value, confirm = $('#pwConfirm').value;
   if (!next || next.length < 8) return toast('New password must be at least 8 characters');
-  if (next !== confirm) return toast('New passwords don’t match');
+  if (next !== confirm) return toast('New passwords donâ€™t match');
   try {
     await api('/api/auth/password', { method: 'POST', body: { current, next } });
     state.user.mustChange = false;
@@ -621,7 +623,7 @@ async function toggleNotif(key, el) {
   toast('Preferences updated');
 }
 
-/* ================= ADMIN — OVERVIEW ================= */
+/* ================= ADMIN â€” OVERVIEW ================= */
 let ADMIN = { members: [], admins: [], tiers: [] };
 
 RENDER.adminOverview = async () => {
@@ -632,7 +634,7 @@ RENDER.adminOverview = async () => {
   const totOrders = m.reduce((s, x) => s + (x.orders || 0), 0);
   $('#view').innerHTML = `
     <div class="tagline-strip">
-      <span>Monitoring ${m.length} member account${m.length === 1 ? '' : 's'} — from ‘waste’ to worth.</span>
+      <span>Monitoring ${m.length} member account${m.length === 1 ? '' : 's'} â€” from â€˜wasteâ€™ to worth.</span>
       <button class="btn btn-green btn-sm" onclick="go('adminMembers')">Manage members</button>
     </div>
 
@@ -641,7 +643,7 @@ RENDER.adminOverview = async () => {
         <div class="lbl">Member accounts</div><div class="big">${m.length}</div>
         <div class="sub">Across all tiers</div></div>
       <div class="card stat"><span class="stripe" style="background:var(--green)"></span>
-        <div class="lbl">Total carbon saved</div><div class="big">${fmtKg(totCarbon)} <span style="font-size:14px">CO₂e</span></div>
+        <div class="lbl">Total carbon saved</div><div class="big">${fmtKg(totCarbon)} <span style="font-size:14px">COâ‚‚e</span></div>
         <div class="sub">All members combined</div></div>
       <div class="card stat"><span class="stripe" style="background:var(--yellow)"></span>
         <div class="lbl">Items rehomed</div><div class="big">${totItems.toLocaleString('en-GB')}</div>
@@ -663,7 +665,7 @@ RENDER.adminOverview = async () => {
           <td>${x.orders}</td>
           <td>${fmtDate(x.memberSince)}</td>
           <td><button class="btn btn-ghost btn-sm" onclick="openMember('${x.id}')">Manage</button></td>
-        </tr>`).join('')}</table>` : '<div class="empty">No member accounts yet — create one on the Members page.</div>'}
+        </tr>`).join('')}</table>` : '<div class="empty">No member accounts yet â€” create one on the Members page.</div>'}
     </div>
 
     <div class="card" style="margin-top:16px">
@@ -671,18 +673,18 @@ RENDER.adminOverview = async () => {
       ${ADMIN.admins.map((a) => `<div class="doc-row">
         <span class="t">${esc(a.name)}<span>${esc(a.email)}</span></span>
         <span class="pill pill-navy">Admin</span></div>`).join('')}
-      <p class="small muted" style="margin-top:10px">Accounts can only be created by admins — there is no public sign-up.</p>
+      <p class="small muted" style="margin-top:10px">Accounts can only be created by admins â€” there is no public sign-up.</p>
     </div>`;
 };
 
-/* ================= ADMIN — MEMBERS ================= */
+/* ================= ADMIN â€” MEMBERS ================= */
 RENDER.adminMembers = async () => {
   ADMIN = await api('/api/admin/members');
   const tierOpts = ADMIN.tiers.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
   $('#view').innerHTML = `
     <div class="card">
       <h3 style="margin-bottom:6px">Create a member account</h3>
-      <p class="small muted" style="margin-bottom:14px">This is the only way accounts are created — members can’t register themselves. Share the temporary password securely; they’ll be prompted to change it on first sign-in.</p>
+      <p class="small muted" style="margin-bottom:14px">This is the only way accounts are created â€” members canâ€™t register themselves. Share the temporary password securely; theyâ€™ll be prompted to change it on first sign-in.</p>
       <div class="form-grid">
         <div><label>Full name</label><input id="nmName"></div>
         <div><label>Email (sign-in)</label><input id="nmEmail" type="email"></div>
@@ -703,7 +705,7 @@ function memberRow(mm) {
   return `<div class="card" style="margin-bottom:12px">
     <div class="order-head">
       <div><h4>${esc(mm.name)}</h4>
-        <div class="meta">${esc(mm.email)}${mm.organisation ? ' · ' + esc(mm.organisation) : ''} · ${esc(mm.tierName)}</div></div>
+        <div class="meta">${esc(mm.email)}${mm.organisation ? ' Â· ' + esc(mm.organisation) : ''} Â· ${esc(mm.tierName)}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="openMember('${mm.id}')">Manage account</button>
         <button class="btn btn-ghost btn-sm" onclick="resetMemberPw('${mm.id}')">Reset password</button>
@@ -711,7 +713,7 @@ function memberRow(mm) {
       </div>
     </div>
     <div class="order-foot">
-      <span><span class="k">Carbon saved</span><b>${fmtKg(mm.carbonSavedKg || 0)} CO₂e</b></span>
+      <span><span class="k">Carbon saved</span><b>${fmtKg(mm.carbonSavedKg || 0)} COâ‚‚e</b></span>
       <span><span class="k">Items rehomed</span><b>${(mm.itemsRehomed || 0).toLocaleString('en-GB')}</b></span>
       <span><span class="k">Orders</span><b>${mm.orders}</b></span>
       <span><span class="k">Lists</span><b>${mm.lists}</b></span>
@@ -739,7 +741,7 @@ function editMember(id) {
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
-      <button class="close" onclick="closeModal()">✕</button>
+      <button class="close" onclick="closeModal()">âœ•</button>
       <h3 style="margin-bottom:16px">Edit ${esc(mm.name)}</h3>
       <div class="form-grid">
         <div><label>Full name</label><input id="emName" value="${esc(mm.name)}"></div>
@@ -749,7 +751,7 @@ function editMember(id) {
         <div><label>Organisation</label><input id="emOrg" value="${esc(mm.organisation || '')}"></div>
         <div><label>Phone</label><input id="emPhone" value="${esc(mm.phone || '')}"></div>
         <div style="grid-column:1/-1"><label>Address</label><input id="emAddr" value="${esc(mm.address || '')}"></div>
-        <div><label>Carbon saved (kg CO₂e)</label><input id="emCarbon" type="number" step="0.1" value="${mm.carbonSavedKg || 0}"></div>
+        <div><label>Carbon saved (kg COâ‚‚e)</label><input id="emCarbon" type="number" step="0.1" value="${mm.carbonSavedKg || 0}"></div>
         <div><label>Items rehomed</label><input id="emItems" type="number" value="${mm.itemsRehomed || 0}"></div>
         <div><label>Account manager name</label><input id="emAmName" value="${esc(am.name || '')}" placeholder="Corporate tier only"></div>
         <div><label>Account manager email</label><input id="emAmEmail" value="${esc(am.email || '')}"></div>
@@ -783,19 +785,19 @@ const monthRow = (m = '', kg = '') => `
   <div class="row-line" style="grid-template-columns:180px 1fr 44px">
     <input type="month" class="cr-m" value="${esc(m)}">
     <input type="number" step="0.1" min="0" class="cr-kg" value="${kg}" placeholder="0">
-    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">âœ•</button>
   </div>`;
 const catRow = (c = '', kg = '') => `
   <div class="row-line" style="grid-template-columns:1fr 170px 44px">
     <input class="cc-cat" value="${esc(c)}" placeholder="e.g. Office & IT">
     <input type="number" step="0.1" min="0" class="cc-kg" value="${kg}" placeholder="0">
-    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">âœ•</button>
   </div>`;
 const wlcaRow = (k = '', v = '') => `
   <div class="row-line" style="grid-template-columns:1fr 170px 44px">
     <input class="cw-k" value="${esc(k)}" placeholder="e.g. A1-A3 avoided">
     <input type="number" step="1" class="cw-v" value="${v}" placeholder="0">
-    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">âœ•</button>
   </div>`;
 function addMonthRow() { addRowHTML('#crMonths', monthRow()); }
 function addCatRow() { addRowHTML('#crCats', catRow()); }
@@ -821,19 +823,19 @@ async function editCarbon(id) {
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal modal-lg">
-      <button class="close" onclick="closeModal()">✕</button>
-      <h3>Carbon report — ${esc(mm.name)}</h3>
-      <p class="m-sub">Everything here appears on the member’s dashboard. Fill in what you have — anything left empty is simply hidden from them.</p>
+      <button class="close" onclick="closeModal()">âœ•</button>
+      <h3>Carbon report â€” ${esc(mm.name)}</h3>
+      <p class="m-sub">Everything here appears on the memberâ€™s dashboard. Fill in what you have â€” anything left empty is simply hidden from them.</p>
 
       <div class="form-grid">
-        <div><label>Total carbon saved (kg CO₂e)</label><input id="crTotal" type="number" step="0.1" min="0" value="${r.totalSavedKg || 0}"></div>
+        <div><label>Total carbon saved (kg COâ‚‚e)</label><input id="crTotal" type="number" step="0.1" min="0" value="${r.totalSavedKg || 0}"></div>
       </div>
 
-      <div class="m-section"><h4>“That’s the same as…”</h4><span class="m-hint">Shown next to the headline number</span></div>
+      <div class="m-section"><h4>â€œThatâ€™s the same asâ€¦â€</h4><span class="m-hint">Shown next to the headline number</span></div>
       <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr">
         <div><label>Car miles</label><input id="crMiles" type="number" step="1" min="0" value="${eq.carMiles || 0}"></div>
         <div><label>Years of tree growth</label><input id="crTrees" type="number" step="0.1" min="0" value="${eq.treeYears || 0}"></div>
-        <div><label>London–Edinburgh flights</label><input id="crFlights" type="number" step="0.1" min="0" value="${eq.flightsLHRtoEDI || 0}"></div>
+        <div><label>Londonâ€“Edinburgh flights</label><input id="crFlights" type="number" step="0.1" min="0" value="${eq.flightsLHRtoEDI || 0}"></div>
       </div>
       <button type="button" class="row-add" onclick="autoEquivalents()">Work these out from the total for me</button>
 
@@ -849,9 +851,9 @@ async function editCarbon(id) {
 
       <div class="m-section"><h4>Verification</h4><span class="m-hint">For tiers with verified reporting</span></div>
       <label class="check-line"><input type="checkbox" id="crVerified" ${r.verified ? 'checked' : ''}> This report has been independently verified</label>
-      <div class="form-grid"><div style="grid-column:1/-1"><label>Verified by</label><input id="crVerifier" value="${esc(r.verifier || '')}" placeholder="e.g. Alphacello — carbon traceability partner"></div></div>
+      <div class="form-grid"><div style="grid-column:1/-1"><label>Verified by</label><input id="crVerifier" value="${esc(r.verifier || '')}" placeholder="e.g. Alphacello â€” carbon traceability partner"></div></div>
 
-      <div class="m-section"><h4>Whole-life carbon (corporate only)</h4><span class="m-hint">Optional WLCA breakdown — leave empty for most members</span></div>
+      <div class="m-section"><h4>Whole-life carbon (corporate only)</h4><span class="m-hint">Optional WLCA breakdown â€” leave empty for most members</span></div>
       <div class="row-editor" id="crWlca">${wlca.map(([k, v]) => wlcaRow(k, v)).join('')}</div>
       <button type="button" class="row-add" onclick="addWlcaRow()">+ Add a WLCA line</button>
 
@@ -894,7 +896,7 @@ async function saveCarbonReport(id) {
   } catch (e) { toast(e.message); }
 }
 
-/* ================= ADMIN — SINGLE MEMBER (log everything they see) ================= */
+/* ================= ADMIN â€” SINGLE MEMBER (log everything they see) ================= */
 function openMember(id) { ADMIN.currentId = id; go('adminMember'); }
 
 RENDER.adminMember = async () => {
@@ -909,7 +911,7 @@ RENDER.adminMember = async () => {
 
   $('#view').innerHTML = `
     <div class="tagline-strip">
-      <span><b>${esc(u.name)}</b> — ${esc(u.email)}${u.organisation ? ' · ' + esc(u.organisation) : ''} · ${t ? esc(t.name) : '—'}</span>
+      <span><b>${esc(u.name)}</b> â€” ${esc(u.email)}${u.organisation ? ' Â· ' + esc(u.organisation) : ''} Â· ${t ? esc(t.name) : 'â€”'}</span>
       <button class="btn btn-green btn-sm" onclick="go('adminMembers')">Back to members</button>
     </div>
 
@@ -947,8 +949,8 @@ RENDER.adminMember = async () => {
           <td><b>${esc(o.id)}</b><br><span class="small muted">${fmtDate(o.placed)}</span></td>
           <td>${o.type === 'donation' ? 'Donation lot' : 'Order'}</td>
           <td>${statusPill(o.status)}</td>
-          <td class="small">${esc(o.slot || '—')}</td>
-          <td>${o.total !== undefined && o.total !== null ? fmtGBP(o.total) : '—'}</td>
+          <td class="small">${esc(o.slot || 'â€”')}</td>
+          <td>${o.total !== undefined && o.total !== null ? fmtGBP(o.total) : 'â€”'}</td>
           <td>${fmtKg(o.carbonSavedKg || 0)}</td>
           <td style="white-space:nowrap">
             <button class="btn btn-ghost btn-sm" onclick="orderModal('${o.id}')">Edit</button>
@@ -973,14 +975,14 @@ RENDER.adminMember = async () => {
           <td style="white-space:nowrap">
             <button class="btn btn-ghost btn-sm" onclick="projectModal('${p.id}')">Edit</button>
             <button class="btn btn-ghost btn-sm" onclick="deleteProject('${p.id}')">Delete</button></td>
-        </tr>`).join('')}</table>` : '<div class="empty">No projects or audits logged — these appear on the member’s Projects & Audits tab.</div>'}
+        </tr>`).join('')}</table>` : '<div class="empty">No projects or audits logged â€” these appear on the memberâ€™s Projects & Audits tab.</div>'}
     </div>
 
     <div class="grid cols-2" style="margin-top:16px">
       <div class="card">
         <h3 style="margin-bottom:10px">Billing (what they see)</h3>
-        <p><b>Method:</b> ${esc((u.billing && u.billing.method) || 'None — free plan')}</p>
-        <p><b>Next payment:</b> ${u.billing && u.billing.nextPayment ? fmtDate(u.billing.nextPayment) : '—'}</p>
+        <p><b>Method:</b> ${esc((u.billing && u.billing.method) || (isFreeTier(u.tier) ? 'None â€” free plan' : 'Not set â€” add billing details below'))}</p>
+        <p><b>Next payment:</b> ${u.billing && u.billing.nextPayment ? fmtDate(u.billing.nextPayment) : 'â€”'}</p>
         <p><b>Invoices:</b> ${u.billing && u.billing.invoices ? u.billing.invoices.length : 0}</p>
         ${u.accountManager ? `<p style="margin-top:8px"><b>Account manager:</b> ${esc(u.accountManager.name)}</p>` : ''}
         <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="editBilling()">Edit billing & invoices</button>
@@ -988,21 +990,21 @@ RENDER.adminMember = async () => {
       <div class="card">
         <h3 style="margin-bottom:10px">Shopping lists (member-managed)</h3>
         ${d.lists.length ? d.lists.map((l) => `<div class="doc-row">
-          <span class="t">${esc(l.name)}<span>${l.items.length} line${l.items.length === 1 ? '' : 's'} · created ${fmtDate(l.created)}</span></span>
+          <span class="t">${esc(l.name)}<span>${l.items.length} line${l.items.length === 1 ? '' : 's'} Â· created ${fmtDate(l.created)}</span></span>
         </div>`).join('') : '<div class="empty">No lists yet.</div>'}
       </div>
     </div>`;
 };
 
 /* ---- order modal ---- */
-const ORDER_STATUSES = ['Reserved', 'Awaiting collection', 'Ready for collection', 'Collected', 'Delivered', 'Passports issued', 'Logged — emission assessment'];
+const ORDER_STATUSES = ['Reserved', 'Awaiting collection', 'Ready for collection', 'Collected', 'Delivered', 'Passports issued', 'Logged â€” emission assessment'];
 
 const itemRow = (it = {}) => `
   <div class="row-line" style="grid-template-columns:1fr 90px 140px 44px" ${it.sku ? `data-sku="${esc(it.sku)}"` : ''}>
     <input class="oi-title" value="${esc(it.title || '')}" placeholder="e.g. Herman Miller task chair">
     <input type="number" min="1" step="1" class="oi-qty" value="${it.qty || 1}">
     <input type="number" min="0" step="0.01" class="oi-price" value="${it.price ?? ''}" placeholder="0.00">
-    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">âœ•</button>
   </div>`;
 function addItemRow() { addRowHTML('#odItems', itemRow()); }
 
@@ -1011,9 +1013,9 @@ function orderModal(oid) {
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal modal-lg">
-      <button class="close" onclick="closeModal()">✕</button>
+      <button class="close" onclick="closeModal()">âœ•</button>
       <h3>${oid ? 'Edit ' + esc(o.id) : 'Log an order'}</h3>
-      <p class="m-sub">This appears on the member’s Orders & Collections page exactly as you enter it.</p>
+      <p class="m-sub">This appears on the memberâ€™s Orders & Collections page exactly as you enter it.</p>
       <div class="form-grid">
         <div><label>Type</label><select id="odType">
           <option value="order" ${o.type !== 'donation' ? 'selected' : ''}>Order / reservation</option>
@@ -1021,17 +1023,17 @@ function orderModal(oid) {
         <div><label>Status</label><select id="odStatus">
           ${ORDER_STATUSES.map((s) => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
         <div><label>Date placed</label><input id="odPlaced" type="date" value="${esc(o.placed || new Date().toISOString().slice(0, 10))}"></div>
-        <div><label>Collection / delivery slot</label><input id="odSlot" value="${esc(o.slot || '')}" placeholder="e.g. Mon 20 Jul, 14:00–16:00"></div>
-        <div style="grid-column:1/-1"><label>Fulfilment</label><input id="odFulfil" value="${esc(o.fulfilment || 'Collection — Material Reuse warehouse')}"></div>
-        <div><label>Total (£)</label><input id="odTotal" type="number" step="0.01" value="${o.total ?? ''}" placeholder="Leave blank if free"></div>
-        <div><label>Member discount (£)</label><input id="odDisc" type="number" step="0.01" value="${o.memberDiscount ?? ''}" placeholder="Optional"></div>
-        <div><label>Delivery fee (£)</label><input id="odFee" type="number" step="0.01" value="${o.deliveryFee ?? ''}" placeholder="Optional"></div>
-        <div><label>Carbon saved (kg CO₂e)</label><input id="odCarbon" type="number" step="0.1" value="${o.carbonSavedKg || 0}"></div>
-        <div style="grid-column:1/-1"><label>Note (shown to member)</label><input id="odNote" value="${esc(o.note || '')}" placeholder="Optional — e.g. Please bring a van and one extra pair of hands"></div>
+        <div><label>Collection / delivery slot</label><input id="odSlot" value="${esc(o.slot || '')}" placeholder="e.g. Mon 20 Jul, 14:00â€“16:00"></div>
+        <div style="grid-column:1/-1"><label>Fulfilment</label><input id="odFulfil" value="${esc(o.fulfilment || 'Collection â€” Material Reuse warehouse')}"></div>
+        <div><label>Total (Â£)</label><input id="odTotal" type="number" step="0.01" value="${o.total ?? ''}" placeholder="Leave blank if free"></div>
+        <div><label>Member discount (Â£)</label><input id="odDisc" type="number" step="0.01" value="${o.memberDiscount ?? ''}" placeholder="Optional"></div>
+        <div><label>Delivery fee (Â£)</label><input id="odFee" type="number" step="0.01" value="${o.deliveryFee ?? ''}" placeholder="Optional"></div>
+        <div><label>Carbon saved (kg COâ‚‚e)</label><input id="odCarbon" type="number" step="0.1" value="${o.carbonSavedKg || 0}"></div>
+        <div style="grid-column:1/-1"><label>Note (shown to member)</label><input id="odNote" value="${esc(o.note || '')}" placeholder="Optional â€” e.g. Please bring a van and one extra pair of hands"></div>
       </div>
 
-      <div class="m-section"><h4>What’s in this order</h4><span class="m-hint">Optional — listed line by line on the member’s order</span></div>
-      <div class="row-head" style="grid-template-columns:1fr 90px 140px 44px"><span>Item</span><span>Qty</span><span>Price each (£)</span><span></span></div>
+      <div class="m-section"><h4>Whatâ€™s in this order</h4><span class="m-hint">Optional â€” listed line by line on the memberâ€™s order</span></div>
+      <div class="row-head" style="grid-template-columns:1fr 90px 140px 44px"><span>Item</span><span>Qty</span><span>Price each (Â£)</span><span></span></div>
       <div class="row-editor" id="odItems">${(o.items || []).map((it) => itemRow(it)).join('')}</div>
       <button type="button" class="row-add" onclick="addItemRow()">+ Add an item</button>
 
@@ -1082,7 +1084,7 @@ const docRow = (d = {}) => `
     <input class="dc-name" value="${esc(d.name || '')}" placeholder="e.g. Pre-refurbishment audit.pdf">
     <input class="dc-type" value="${esc(d.type || '')}" placeholder="e.g. Audit report">
     <input type="date" class="dc-date" value="${esc(d.date || '')}">
-    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">âœ•</button>
   </div>`;
 function addDocRow() { addRowHTML('#pjDocs', docRow()); }
 
@@ -1095,23 +1097,23 @@ function projectModal(pid) {
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal modal-lg">
-      <button class="close" onclick="closeModal()">✕</button>
+      <button class="close" onclick="closeModal()">âœ•</button>
       <h3>${pid ? 'Edit ' + esc(p.name) : 'Log a project / audit'}</h3>
-      <p class="m-sub">This appears on the member’s Projects & Audits page.</p>
+      <p class="m-sub">This appears on the memberâ€™s Projects & Audits page.</p>
       <div class="form-grid">
-        <div style="grid-column:1/-1"><label>Project name</label><input id="pjName" value="${esc(p.name || '')}" placeholder="e.g. HQ office strip-out — Floor 3"></div>
+        <div style="grid-column:1/-1"><label>Project name</label><input id="pjName" value="${esc(p.name || '')}" placeholder="e.g. HQ office strip-out â€” Floor 3"></div>
         <div><label>Type</label><select id="pjType">${typeOpts}</select></div>
         <div><label>Status</label><select id="pjStatus">
           ${['Planning', 'In progress', 'Complete'].map((s) => `<option ${p.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-        <div><label>Audit reference</label><input id="pjRef" value="${esc(p.auditRef || '')}" placeholder="Optional — e.g. GLA-2026-114"></div>
+        <div><label>Audit reference</label><input id="pjRef" value="${esc(p.auditRef || '')}" placeholder="Optional â€” e.g. GLA-2026-114"></div>
         <div><label>Progress (%)</label><input id="pjProg" type="number" min="0" max="100" value="${p.progress || 0}"></div>
         <div><label>Started</label><input id="pjStart" type="date" value="${esc(p.started || new Date().toISOString().slice(0, 10))}"></div>
         <div><label>Target date</label><input id="pjTarget" type="date" value="${esc(p.target || '')}"></div>
-        <div><label>Carbon saved (kg CO₂e)</label><input id="pjCarbon" type="number" step="0.1" value="${p.carbonSavedKg || 0}"></div>
+        <div><label>Carbon saved (kg COâ‚‚e)</label><input id="pjCarbon" type="number" step="0.1" value="${p.carbonSavedKg || 0}"></div>
         <div style="grid-column:1/-1"><label>Summary (shown to member)</label><input id="pjSummary" value="${esc(p.summary || '')}" placeholder="One or two sentences about the project"></div>
       </div>
 
-      <div class="m-section"><h4>Documents</h4><span class="m-hint">Optional — listed in the member’s document library</span></div>
+      <div class="m-section"><h4>Documents</h4><span class="m-hint">Optional â€” listed in the memberâ€™s document library</span></div>
       <div class="row-head" style="grid-template-columns:1fr 180px 160px 44px"><span>Document name</span><span>Type</span><span>Date</span><span></span></div>
       <div class="row-editor" id="pjDocs">${(p.documents || []).map((d) => docRow(d)).join('')}</div>
       <button type="button" class="row-add" onclick="addDocRow()">+ Add a document</button>
@@ -1159,8 +1161,8 @@ const invRow = (v = {}) => `
     <input type="date" class="iv-date" value="${esc(v.date || '')}">
     <input type="number" min="0" step="0.01" class="iv-amount" value="${v.amount ?? ''}" placeholder="0.00">
     <select class="iv-status">${['Paid', 'Due', 'Overdue'].map((s) => `<option ${v.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
-    <input class="iv-desc" value="${esc(v.desc || '')}" placeholder="What it’s for — e.g. Annual membership">
-    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">✕</button>
+    <input class="iv-desc" value="${esc(v.desc || '')}" placeholder="What itâ€™s for â€” e.g. Annual membership">
+    <button type="button" class="row-del" onclick="delRow(this)" title="Remove">âœ•</button>
   </div>`;
 function addInvRow() { addRowHTML('#blInvoices', invRow()); }
 
@@ -1170,16 +1172,16 @@ function editBilling() {
   $('#modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal modal-lg">
-      <button class="close" onclick="closeModal()">✕</button>
-      <h3>Billing — ${esc(u.name)}</h3>
-      <p class="m-sub">This appears on the member’s Membership & Billing page. Invoice numbers are added automatically.</p>
+      <button class="close" onclick="closeModal()">âœ•</button>
+      <h3>Billing â€” ${esc(u.name)}</h3>
+      <p class="m-sub">This appears on the memberâ€™s Membership & Billing page. Invoice numbers are added automatically.</p>
       <div class="form-grid">
-        <div><label>Payment method</label><input id="blMethod" value="${esc(b.method || '')}" placeholder="e.g. Visa •••• 4821, or leave blank for free plans"></div>
+        <div><label>Payment method</label><input id="blMethod" value="${esc(b.method || '')}" placeholder="e.g. Visa â€¢â€¢â€¢â€¢ 4821, or leave blank for free plans"></div>
         <div><label>Next payment date</label><input id="blNext" type="date" value="${esc(b.nextPayment || '')}"></div>
       </div>
 
-      <div class="m-section"><h4>Invoices</h4><span class="m-hint">Most recent first is fine — we sort by date</span></div>
-      <div class="row-head" style="grid-template-columns:150px 120px 130px 1fr 44px"><span>Date</span><span>Amount (£)</span><span>Status</span><span>Description</span><span></span></div>
+      <div class="m-section"><h4>Invoices</h4><span class="m-hint">Most recent first is fine â€” we sort by date</span></div>
+      <div class="row-head" style="grid-template-columns:150px 120px 130px 1fr 44px"><span>Date</span><span>Amount (Â£)</span><span>Status</span><span>Description</span><span></span></div>
       <div class="row-editor" id="blInvoices">${(b.invoices || []).map((v) => invRow(v)).join('')}</div>
       <button type="button" class="row-add" onclick="addInvRow()">+ Add an invoice</button>
 
@@ -1225,13 +1227,13 @@ async function resetMemberPw(id) {
   if (!pw) return;
   try {
     await api(`/api/admin/members/${id}/password`, { method: 'POST', body: { password: pw } });
-    toast('Password reset — share it securely');
+    toast('Password reset â€” share it securely');
   } catch (e) { toast(e.message); }
 }
 
 async function deleteMember(id) {
   const mm = ADMIN.members.find((x) => x.id === id);
-  if (!confirm(`Delete ${mm ? mm.name : 'this member'}’s account? This can’t be undone.`)) return;
+  if (!confirm(`Delete ${mm ? mm.name : 'this member'}â€™s account? This canâ€™t be undone.`)) return;
   try {
     await api('/api/admin/members/' + id, { method: 'DELETE' });
     toast('Account deleted'); go(state.page);
