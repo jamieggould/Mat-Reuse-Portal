@@ -231,8 +231,6 @@ RENDER.warehouse = async () => {
   <iframe src="https://mariela66454.softr.app"
           width="100%" height="1300" frameborder="0"
           style="border:none; display:block;"></iframe>
-  <div style="position:absolute; bottom:0; left:0;
-              width:210px; height:64px; background:#ffffff;"></div>
 </div>
     <div class="card" style="margin-top:28px">
       <h3 style="margin-bottom:6px">Can’t see what you need? Join the wishlist</h3>
@@ -435,9 +433,138 @@ function carbonSection(r, g) {
 
     <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
       ${g.carbonReports === 'full' || g.carbonReports === 'verified'
-        ? `<button class="btn btn-primary" onclick="toast('Report queued — a PDF will land in your inbox shortly')">Download ${g.carbonReports === 'verified' ? 'verified' : ''} carbon report (PDF)</button>`
+        ? `<button class="btn btn-primary" onclick="downloadCarbonReport()">Download ${g.carbonReports === 'verified' ? 'verified' : ''} carbon report (PDF)</button>`
         : `<button class="btn btn-ghost" disabled>Downloadable reports — Community tier and above</button>`}
     </div>`;
+}
+
+/* ---- downloadable branded carbon report (opens save-as-PDF dialog) ---- */
+async function downloadCarbonReport() {
+  const { report: r } = await api('/api/carbon?userId=' + state.user.id);
+  const u = state.user;
+  const tierName = state.tier ? state.tier.name : '';
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const ref = `MRG-CR-${today.toISOString().slice(0, 10).replace(/-/g, '')}-${u.id.toUpperCase()}`;
+  const monthLong = (m) => new Date(m + '-01').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const kg = (n) => Number(n).toLocaleString('en-GB', { maximumFractionDigits: 1 });
+  const maxM = Math.max(...(r.monthly || []).map((m) => m.kg), 1);
+  const maxC = Math.max(...(r.byCategory || []).map((c) => c.kg), 1);
+
+  const w = window.open('', '_blank');
+  if (!w) { toast('Please allow pop-ups to download your report'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="en-GB"><head><meta charset="UTF-8">
+<title>MRG Carbon Report — ${esc(u.name)} — ${today.toISOString().slice(0, 10)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#06183F; --azul:#1653F3; --green:#9EFF51; --hair:#DDE2EC; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body { font-family:'Inter',sans-serif; color:var(--navy); font-size:12px; background:#fff; }
+  h1,h2 { font-family:'Geologica',sans-serif; }
+  .page { max-width:820px; margin:0 auto; padding:0 8px; }
+  .savebar { background:var(--navy); color:#fff; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .savebar p { font-size:13px; }
+  .savebar button { background:var(--green); color:var(--navy); border:0; font-family:'Geologica',sans-serif; font-weight:700; font-size:13px; padding:10px 22px; cursor:pointer; letter-spacing:.04em; text-transform:uppercase; }
+  .head { background:var(--navy); color:#fff; padding:34px 36px; display:flex; justify-content:space-between; align-items:flex-start; }
+  .head img { height:44px; }
+  .head .r { text-align:right; }
+  .head .kicker { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--green); font-weight:600; }
+  .head h1 { font-size:26px; font-weight:800; margin-top:6px; }
+  .band { height:4px; background:var(--green); }
+  .meta { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--hair); border-top:0; }
+  .meta div { padding:12px 16px; border-right:1px solid var(--hair); }
+  .meta div:last-child { border-right:0; }
+  .meta b { display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#5A6785; margin-bottom:4px; }
+  .meta span { font-weight:600; font-size:12.5px; }
+  section { margin-top:26px; }
+  .sec-t { font-family:'Geologica',sans-serif; font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; padding-bottom:8px; border-bottom:2px solid var(--navy); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .sec-t::before { content:''; width:18px; height:4px; background:var(--green); }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .stat { border:1px solid var(--hair); border-top:4px solid var(--azul); padding:16px; }
+  .stat:first-child { border-top-color:var(--green); }
+  .stat:last-child { border-top-color:#FFED4D; }
+  .stat b { display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#5A6785; }
+  .stat .n { font-family:'Geologica',sans-serif; font-size:26px; font-weight:800; margin:6px 0 2px; }
+  .stat i { font-style:normal; font-size:10.5px; color:#5A6785; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#5A6785; padding:7px 10px; border-bottom:2px solid var(--navy); }
+  td { padding:7px 10px; border-bottom:1px solid var(--hair); font-size:12px; }
+  td.num { text-align:right; font-weight:600; white-space:nowrap; }
+  .bar { height:9px; background:#EEF1F7; position:relative; min-width:120px; }
+  .bar i { position:absolute; inset:0 auto 0 0; background:var(--azul); }
+  .verify { border:1px solid var(--hair); border-left:4px solid var(--green); padding:14px 18px; font-size:12px; line-height:1.55; }
+  .foot { margin-top:32px; border-top:2px solid var(--navy); padding:14px 0 30px; display:flex; justify-content:space-between; font-size:10.5px; color:#5A6785; }
+  .foot b { color:var(--navy); }
+  @media print { .savebar { display:none; } .head { margin:0; } body { font-size:11px; } }
+  @page { size:A4; margin:14mm 12mm; }
+</style></head><body>
+<div class="savebar"><p>Your report is ready — choose where to save it as a PDF.</p><button onclick="window.print()">Save as PDF</button></div>
+<div class="head"><img src="https://www.material-reuse.co.uk/wp-content/uploads/2024/02/mrg-logo-white.svg" alt="Material Reuse Group">
+  <div class="r"><div class="kicker">${r.verified ? 'Independently verified' : 'Carbon reporting'}</div>
+  <h1>Carbon Savings Report</h1></div></div>
+<div class="band"></div>
+<div class="page">
+  <div class="meta">
+    <div><b>Prepared for</b><span>${esc(u.name)}${u.organisation ? ' · ' + esc(u.organisation) : ''}</span></div>
+    <div><b>Membership</b><span>${esc(tierName)}</span></div>
+    <div><b>Report date</b><span>${dateStr}</span></div>
+    <div><b>Reference</b><span>${ref}</span></div>
+  </div>
+
+  <section>
+    <div class="sec-t">Headline figures</div>
+    <div class="stats">
+      <div class="stat"><b>Total CO₂e avoided</b><div class="n">${kg(r.totalSavedKg)} kg</div><i>${r.verified ? 'Independently verified' : 'Estimated from product passport data'}</i></div>
+      <div class="stat"><b>Equivalent car miles</b><div class="n">${(r.equivalents.carMiles || 0).toLocaleString('en-GB')}</div><i>Average petrol car emissions</i></div>
+      <div class="stat"><b>Tree-years of absorption</b><div class="n">${(r.equivalents.treeYears || 0).toLocaleString('en-GB')}</div><i>Mature broadleaf equivalent</i></div>
+    </div>
+  </section>
+
+  ${(r.monthly || []).length ? `<section>
+    <div class="sec-t">Monthly savings</div>
+    <table><tr><th>Month</th><th style="width:45%"></th><th style="text-align:right">kg CO₂e</th></tr>
+      ${r.monthly.map((m) => `<tr><td>${monthLong(m.month)}</td>
+        <td><div class="bar"><i style="width:${Math.max(2, (m.kg / maxM) * 100)}%"></i></div></td>
+        <td class="num">${kg(m.kg)}</td></tr>`).join('')}
+      <tr><td style="font-weight:700">Total</td><td></td><td class="num" style="font-weight:700">${kg(r.monthly.reduce((s, m) => s + m.kg, 0))}</td></tr>
+    </table>
+  </section>` : ''}
+
+  ${(r.byCategory || []).length ? `<section>
+    <div class="sec-t">Savings by material category</div>
+    <table><tr><th>Category</th><th style="width:45%"></th><th style="text-align:right">kg CO₂e</th></tr>
+      ${r.byCategory.map((c) => `<tr><td>${esc(c.category)}</td>
+        <td><div class="bar"><i style="width:${Math.max(2, (c.kg / maxC) * 100)}%"></i></div></td>
+        <td class="num">${kg(c.kg)}</td></tr>`).join('')}
+    </table>
+  </section>` : ''}
+
+  ${r.wlcaModules ? `<section>
+    <div class="sec-t">Whole-life carbon assessment modules</div>
+    <table><tr><th>Module</th><th style="text-align:right">kg CO₂e</th></tr>
+      ${Object.entries(r.wlcaModules).map(([k, v]) => `<tr><td>${esc(k)}</td>
+        <td class="num" style="color:${v < 0 ? '#B42318' : '#1d7a05'}">${v < 0 ? '+' : '−'}${kg(Math.abs(v))}</td></tr>`).join('')}
+    </table>
+    <p style="margin-top:8px;font-size:10.5px;color:#5A6785">A1–A3 manufacture avoided by reuse; A4 transport added; Module D end-of-life benefits. Suitable for BREEAM Mat 06 / GLA circular economy reporting.</p>
+  </section>` : ''}
+
+  <section>
+    <div class="sec-t">Basis of this report</div>
+    <div class="verify">${r.verified
+      ? `This report has been independently verified${r.verifier ? ` by <b>${esc(r.verifier)}</b>` : ''}. Figures are calculated from product passport data for each reused item supplied through the Material Reuse Group online warehouse, using embodied-carbon factors for avoided manufacture.`
+      : 'Figures in this report are estimated from product passport data for each reused item supplied through the Material Reuse Group online warehouse, using embodied-carbon factors for avoided manufacture. Contact your account manager to arrange independent verification.'}
+    </div>
+  </section>
+
+  <div class="foot">
+    <div><b>Material Reuse Group</b> · Building a sustainable future, one material at a time.</div>
+    <div>material-reuse.co.uk · kallie@material-reuse.co.uk · 01932 867989</div>
+  </div>
+</div>
+</body></html>`);
+  w.document.close();
+  setTimeout(() => { try { w.focus(); w.print(); } catch (e) { /* user closed window */ } }, 900);
 }
 
 /* ================= PROJECTS & AUDITS ================= */
@@ -591,7 +718,7 @@ RENDER.settings = async () => {
           <p class="small">${u.role === 'admin'
             ? `Portal administrator since <b>${fmtDate(u.memberSince)}</b>.`
             : `Member since <b>${fmtDate(u.memberSince)}</b> on <b>${esc(state.tier.name)}</b>.`}</p>
-          <p class="small muted" style="margin-top:6px">Questions? Call 01932 867989 or email hello@material-reuse.co.uk.</p>
+          <p class="small muted" style="margin-top:6px">Questions? Call 01932 867989 or email kallie@material-reuse.co.uk.</p>
         </div>
       </div>
     </div>`;
@@ -769,7 +896,7 @@ async function saveMember(id) {
     phone: $('#emPhone').value || null, address: $('#emAddr').value || null,
     carbonSavedKg: parseFloat($('#emCarbon').value) || 0,
     itemsRehomed: parseInt($('#emItems').value, 10) || 0,
-    accountManager: amName ? { name: amName, email: $('#emAmEmail').value || 'hello@material-reuse.co.uk', phone: '01932 867989' } : null,
+    accountManager: amName ? { name: amName, email: $('#emAmEmail').value || 'kallie@material-reuse.co.uk', phone: '01932 867989' } : null,
   };
   try {
     await api('/api/admin/members/' + id, { method: 'PATCH', body });
