@@ -17,8 +17,8 @@
         "newsletter": false
       },
       "auth": {
-        "salt": "27fdd99b378e96046e63a0e71bfdf680",
-        "hash": "8ea0092d7f02e25cc685245abc0ae78503f674d9c60ec6b9a18d2a6fe64ee844",
+        "salt": "b92d358d89e57de6d81df7d9cf7c3ced",
+        "hash": "dd19073d4079910f451327f5e673a17279b369b63b88d63de6e00fe5e393b905",
         "mustChange": false
       }
     },
@@ -193,6 +193,40 @@
         "salt": "be2adc8e7b825dca441a2308e1d0464d",
         "hash": "f9ce2796a457696f49106be08d2ea3c65daaa847a37d5baad21aa7236cf5c046",
         "mustChange": true
+      }
+    },
+    {
+      "id": "u5",
+      "role": "member",
+      "name": "James Gould",
+      "email": "jamieggould@gmail.com",
+      "tier": "corporate-reuse-partner",
+      "memberSince": "2026-08-25",
+      "avatarInitials": "JG",
+      "organisation": "Material Reuse Group (test account)",
+      "phone": "01932 867989",
+      "address": null,
+      "carbonSavedKg": 0,
+      "itemsRehomed": 0,
+      "accountManager": {
+        "name": "Kallie Bell",
+        "email": "kallie@material-reuse.co.uk",
+        "phone": "01932 867989"
+      },
+      "notifications": {
+        "newStock": true,
+        "orderUpdates": true,
+        "newsletter": true
+      },
+      "billing": {
+        "method": null,
+        "nextPayment": null,
+        "invoices": []
+      },
+      "auth": {
+        "salt": "b3a0964b7ae6c0244edf5af2b32a0c92",
+        "hash": "5ce7396d2ec8ce436e9d7504df2c7f1208fff1b20465acb15253e5ba09b168c4",
+        "mustChange": false
       }
     }
   ]
