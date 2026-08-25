@@ -17,12 +17,14 @@ Then open **http://localhost:4173** and sign in with email + password.
 
 Real authentication: salted PBKDF2 password hashes, session tokens, no self-registration — accounts can only be created by admins on the Members page.
 
-**Admins** (temporary passwords — change on first sign-in via Account Settings):
+**Admins:**
 
-| Admin | Email | Temp password |
+| Admin | Email | Password |
 |---|---|---|
 | James Gould | jamesgould@estaraai.com | `MRG-James-2026` |
-| Kallie Bell | kallie@material-reuse.co.uk | `MRG-Kallie-2026` |
+| Kallie Bell | kallie@material-reuse.co.uk | `MRGKALLIE` |
+
+**Test member (remove before go-live):** James Gould — jamieggould@gmail.com / `JAMESGOULD-2026` — Corporate Reuse Partnership. Committed to `users.json`, so it survives every Render redeploy.
 
 Admins see an **Overview** (totals + member monitor) and a **Members** page: create accounts, edit every personalised field (tier, dashboard stats, account manager, carbon report data), reset passwords, delete accounts.
 
@@ -36,7 +38,7 @@ Tier names, annual prices and the perk matrix come directly from the live member
 - **Online Warehouse** — the **live Softr marketplace embed** (exact HTML with payment links and reserve rules, Airtable-connected) with the **Join the Wishlist** Airtable form underneath
 - **Orders & Collections** — reservations, collection/delivery slots, donation lots
 - **Shopping Lists** — per-project lists with live stock checks, cost and carbon totals
-- **Projects & Audits** — GLA pre-demolition audits, resource management plans, circular economy statements, document library
+- **Projects & Audits** — pre-refurbishment audits, resource management plans, circular economy reports, document library
 - **Membership & Billing** — the **live Softr pricing-table embed** (exact HTML incl. payment links) with billing/invoices underneath. Member discount % in orders is a demo assumption — the site lists "Member Discounts" without a figure
 - **Account Settings** — profile editing, notification toggles
 
@@ -63,6 +65,6 @@ material-reuse-portal/
 
 ## Notes
 
-- Data lives in `backend/data/*.json`. Account changes (created members, password changes, profile/stat edits, carbon reports) are **saved to disk**; reservations and list edits are in-memory and reset on restart.
+- Data lives in `backend/data/*.json`. **Everything is saved to disk**: accounts, password changes, profile/stat edits, carbon reports, orders, reservations, stock levels, shopping lists, projects and billing all survive a server restart. Sign-in sessions are in-memory, so a restart signs everyone out (they just log back in).
 - Note for Render's free tier: the filesystem is ephemeral across deploys/restarts, so accounts created in the live app will reset on redeploy — commit important account changes back to `backend/data/users.json`, or move to a database for production.
 - API is plain REST behind Bearer-token auth (`/api/auth/*`, `/api/admin/*`, `/api/tiers`, `/api/inventory`, `/api/orders`, `/api/lists`, `/api/carbon`, `/api/projects`) — ready to swap onto a real database later.
