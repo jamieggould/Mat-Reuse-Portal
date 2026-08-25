@@ -206,6 +206,16 @@
         "A4 transport": -1830,
         "D benefits": 9300
       }
+    },
+    "u5": {
+      "totalSavedKg": 0,
+      "monthly": [],
+      "byCategory": [],
+      "equivalents": {
+        "carMiles": 0,
+        "treeYears": 0
+      },
+      "verified": false
     }
   }
 }
