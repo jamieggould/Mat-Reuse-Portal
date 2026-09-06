@@ -51,6 +51,8 @@ const statusPill = (s) => {
     'Logged — emission assessment': 'pill-orange', 'Paid': 'pill-green', 'Overdue': 'pill-red',
     'Available': 'pill-green', 'Pending': 'pill-yellow',
     'In progress': 'pill-blue', 'Planning': 'pill-yellow', 'Complete': 'pill-green',
+    'Recovered': 'pill-yellow', 'In storage': 'pill-blue', 'Listed': 'pill-green', 'Rehomed': 'pill-green', 'Recycled': 'pill-navy',
+    'Submitted': 'pill-blue', 'Under review': 'pill-yellow', 'Accepted': 'pill-green', 'Collection arranged': 'pill-orange', 'Declined': 'pill-red',
   };
   return `<span class="pill ${map[s] || 'pill-blue'}">${esc(s)}</span>`;
 };
@@ -90,6 +92,35 @@ function enterApp(user, tier) {
   renderNav();
   go(user.role === 'admin' ? 'adminOverview' : 'dashboard');
   if (user.mustChange) toast('You’re on a temporary password — change it in Account Settings');
+}
+
+function toggleRegister(ev) {
+  ev.preventDefault();
+  const showingLogin = $('#loginForm').style.display !== 'none';
+  $('#loginForm').style.display = showingLogin ? 'none' : '';
+  $('#registerForm').style.display = showingLogin ? '' : 'none';
+  $('#loginToggleNote').innerHTML = showingLogin
+    ? 'Creates a <b>Domestic Free Membership</b> — browse the warehouse, one shopping list, carbon snapshot. Already a member? <a href="#" onclick="toggleRegister(event)">Sign in</a>.'
+    : 'New to Material Reuse? <a href="#" onclick="toggleRegister(event)">Create a free account</a> — Domestic Free Membership, upgrade any time.';
+}
+
+async function doRegister(ev) {
+  ev.preventDefault();
+  const btn = $('#regBtn'), err = $('#regError');
+  btn.disabled = true; btn.textContent = 'Creating your account…'; err.classList.remove('show');
+  try {
+    const { token, user, tier } = await api('/api/auth/register', {
+      method: 'POST',
+      body: { name: $('#regName').value, email: $('#regEmail').value, password: $('#regPassword').value },
+    });
+    setToken(token);
+    $('#regPassword').value = '';
+    enterApp(user, tier);
+    toast('Welcome to Material Reuse — your free membership is live');
+  } catch (e) {
+    err.textContent = e.message; err.classList.add('show');
+  }
+  btn.disabled = false; btn.textContent = 'Create free account';
 }
 
 async function logout() {
@@ -235,7 +266,10 @@ RENDER.warehouse = async () => {
     <div class="card" style="margin-top:28px">
       <h3 style="margin-bottom:6px">Can’t see what you need? Join the wishlist</h3>
       <p class="small muted" style="margin-bottom:14px">Tell us what you’re after and we’ll let you know when it comes through a strip-out.</p>
-      <iframe class="airtable-embed" src="https://airtable.com/embed/appiHCw9vidbsic9y/pagMtURovTN6nNryp/form?prefill_Status=Active&hide_Status=true" frameborder="0" onmousewheel="" width="100%" height="720" style="background: transparent; border: 1px solid #ccc;"></iframe>
+      <div style="position:relative">
+        <iframe class="airtable-embed" src="https://airtable.com/embed/appiHCw9vidbsic9y/pagMtURovTN6nNryp/form?prefill_Status=Active&hide_Status=true" frameborder="0" onmousewheel="" width="100%" height="620" style="background: transparent; border: 1px solid #DDE2EC; display:block;"></iframe>
+        <div style="position:absolute; bottom:1px; left:1px; right:18px; height:56px; background:#ffffff; pointer-events:none;"></div>
+      </div>
     </div>`;
 };
 
@@ -279,6 +313,7 @@ async function openPassport(sku) {
         <button class="btn btn-primary" ${canReserve ? '' : 'disabled'} onclick="reserveItem('${i.sku}')">
           ${!g.reservations ? 'Reserving requires Domestic Plus' : reservable ? 'Reserve this item' : 'Not currently reservable'}</button>
         <button class="btn btn-green" onclick="addToListPrompt('${i.sku}')">Add to shopping list</button>
+        <button class="btn btn-ghost" onclick="closeModal();openMaterial('${i.sku}')">Full material passport</button>
       </div>
     </div>
   </div>`;
@@ -451,115 +486,152 @@ async function downloadCarbonReport() {
   const maxM = Math.max(...(r.monthly || []).map((m) => m.kg), 1);
   const maxC = Math.max(...(r.byCategory || []).map((c) => c.kg), 1);
 
+  const period = (r.monthly || []).length
+    ? `${monthLong(r.monthly[0].month)} – ${monthLong(r.monthly[r.monthly.length - 1].month)}`
+    : `Membership to date (since ${new Date(u.memberSince).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })})`;
+  const logoSVG = `<svg viewBox="0 0 48 48" width="46" height="46" aria-hidden="true">
+    <g fill="none" stroke-width="8.6" stroke-linecap="round">
+      <path d="M38.77 21.39 A15 15 0 0 0 27.88 9.51" stroke="#9EFF51"/>
+      <path d="M21.40 9.23 A15 15 0 0 0 9.51 20.12" stroke="#6FD53C"/>
+      <path d="M9.23 26.60 A15 15 0 0 0 20.12 38.49" stroke="#35A94D"/>
+      <path d="M26.60 38.77 A15 15 0 0 0 38.49 27.88" stroke="#0F8A6D"/>
+    </g></svg>`;
+  const lockup = `<div class="lockup">${logoSVG}<div class="wordmark">material<br>reuse</div></div>`;
+
   const w = window.open('', '_blank');
   if (!w) { toast('Please allow pop-ups to download your report'); return; }
   w.document.write(`<!DOCTYPE html><html lang="en-GB"><head><meta charset="UTF-8">
-<title>MRG Carbon Report — ${esc(u.name)} — ${today.toISOString().slice(0, 10)}</title>
+<title>MRG Carbon Report — ${String(u.name)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --navy:#06183F; --azul:#1653F3; --green:#9EFF51; --hair:#DDE2EC; }
+  :root { --navy:#06183F; --azul:#1653F3; --green:#9EFF51; --hair:#DDE2EC; --mut:#5A6785; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  body { font-family:'Inter',sans-serif; color:var(--navy); font-size:12px; background:#fff; }
-  h1,h2 { font-family:'Geologica',sans-serif; }
-  .page { max-width:820px; margin:0 auto; padding:0 8px; }
+  html { background:#EDF0F6; }
+  body { font-family:'Inter',sans-serif; color:var(--navy); font-size:12px; }
+  h1,h2,.wordmark,.cert-name,.cert-big,.stat .n { font-family:'Geologica',sans-serif; }
   .savebar { background:var(--navy); color:#fff; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
   .savebar p { font-size:13px; }
   .savebar button { background:var(--green); color:var(--navy); border:0; font-family:'Geologica',sans-serif; font-weight:700; font-size:13px; padding:10px 22px; cursor:pointer; letter-spacing:.04em; text-transform:uppercase; }
-  .head { background:var(--navy); color:#fff; padding:34px 36px; display:flex; justify-content:space-between; align-items:flex-start; }
-  .head img { height:44px; }
+  .sheet { width:210mm; min-height:297mm; margin:24px auto; background:#fff; display:flex; flex-direction:column; box-shadow:0 4px 30px rgba(6,24,63,.18); }
+  .head { background:var(--navy); color:#fff; padding:11mm 12mm 9mm; display:flex; justify-content:space-between; align-items:center; }
+  .lockup { display:flex; align-items:center; gap:11px; }
+  .wordmark { font-size:19px; font-weight:700; line-height:1.02; color:#fff; letter-spacing:.01em; }
   .head .r { text-align:right; }
-  .head .kicker { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--green); font-weight:600; }
-  .head h1 { font-size:26px; font-weight:800; margin-top:6px; }
-  .band { height:4px; background:var(--green); }
-  .meta { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--hair); border-top:0; }
-  .meta div { padding:12px 16px; border-right:1px solid var(--hair); }
-  .meta div:last-child { border-right:0; }
-  .meta b { display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#5A6785; margin-bottom:4px; }
-  .meta span { font-weight:600; font-size:12.5px; }
-  section { margin-top:26px; }
-  .sec-t { font-family:'Geologica',sans-serif; font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; padding-bottom:8px; border-bottom:2px solid var(--navy); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
-  .sec-t::before { content:''; width:18px; height:4px; background:var(--green); }
-  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .stat { border:1px solid var(--hair); border-top:4px solid var(--azul); padding:16px; }
+  .head .kicker { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--green); font-weight:600; }
+  .head h1 { font-size:27px; font-weight:800; margin-top:5px; }
+  .head .sub { font-size:10.5px; color:#B9C3D8; margin-top:5px; }
+  .band { height:5px; background:var(--green); }
+  .inner { padding:9mm 12mm 6mm; display:flex; flex-direction:column; flex:1; }
+  .cert { text-align:center; padding:7mm 6mm 8mm; border:1px solid var(--hair); border-top:4px solid var(--green); }
+  .cert .lead { font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--mut); font-weight:600; }
+  .cert-name { font-size:30px; font-weight:800; margin:9px 0 2px; }
+  .cert .org { font-size:13px; color:var(--mut); font-weight:500; }
+  .cert .mid { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--mut); font-weight:600; margin-top:14px; }
+  .cert-big { font-size:44px; font-weight:800; color:var(--azul); margin:6px 0 4px; }
+  .cert .capt { font-size:12px; max-width:130mm; margin:0 auto; line-height:1.55; }
+  .cert .period { display:inline-block; margin-top:12px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; font-weight:600; background:var(--navy); color:var(--green); padding:6px 14px; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:8mm; }
+  .stat { border:1px solid var(--hair); border-top:4px solid var(--azul); padding:14px 16px; }
   .stat:first-child { border-top-color:var(--green); }
   .stat:last-child { border-top-color:#FFED4D; }
-  .stat b { display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#5A6785; }
-  .stat .n { font-family:'Geologica',sans-serif; font-size:26px; font-weight:800; margin:6px 0 2px; }
-  .stat i { font-style:normal; font-size:10.5px; color:#5A6785; }
+  .stat b { display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--mut); }
+  .stat .n { font-size:24px; font-weight:800; margin:6px 0 2px; }
+  .stat i { font-style:normal; font-size:10px; color:var(--mut); }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:8mm; }
+  .sec-t { font-family:'Geologica',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; padding-bottom:7px; border-bottom:2px solid var(--navy); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .sec-t::before { content:''; width:18px; height:4px; background:var(--green); }
   table { width:100%; border-collapse:collapse; }
-  th { text-align:left; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#5A6785; padding:7px 10px; border-bottom:2px solid var(--navy); }
-  td { padding:7px 10px; border-bottom:1px solid var(--hair); font-size:12px; }
+  th { text-align:left; font-size:8.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--mut); padding:6px 8px; border-bottom:2px solid var(--navy); }
+  td { padding:6px 8px; border-bottom:1px solid var(--hair); font-size:11.5px; }
   td.num { text-align:right; font-weight:600; white-space:nowrap; }
-  .bar { height:9px; background:#EEF1F7; position:relative; min-width:120px; }
+  .bar { height:8px; background:#EEF1F7; position:relative; min-width:60px; }
   .bar i { position:absolute; inset:0 auto 0 0; background:var(--azul); }
-  .verify { border:1px solid var(--hair); border-left:4px solid var(--green); padding:14px 18px; font-size:12px; line-height:1.55; }
-  .foot { margin-top:32px; border-top:2px solid var(--navy); padding:14px 0 30px; display:flex; justify-content:space-between; font-size:10.5px; color:#5A6785; }
-  .foot b { color:var(--navy); }
-  @media print { .savebar { display:none; } .head { margin:0; } body { font-size:11px; } }
-  @page { size:A4; margin:14mm 12mm; }
+  .verify { margin-top:8mm; border:1px solid var(--hair); border-left:4px solid var(--green); padding:13px 17px; font-size:11.5px; line-height:1.6; }
+  .signrow { display:flex; justify-content:space-between; gap:12mm; margin-top:9mm; }
+  .sign { flex:1; }
+  .sign .line { border-bottom:1.5px solid var(--navy); height:34px; }
+  .sign b { display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--mut); margin-top:6px; }
+  .sign span { font-size:11.5px; font-weight:600; }
+  .grow { flex:1; }
+  .foot { background:var(--navy); color:#fff; border-top:5px solid var(--green); padding:8mm 12mm; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .foot .tag { font-size:11px; font-weight:600; }
+  .foot .tag small { display:block; font-weight:400; font-size:10px; color:#B9C3D8; margin-top:3px; }
+  .foot .c { text-align:right; font-size:10px; color:#B9C3D8; line-height:1.7; }
+  .foot .c b { color:var(--green); font-size:10.5px; letter-spacing:.08em; }
+  @media print { html { background:#fff; } .savebar { display:none; } .sheet { margin:0; width:auto; min-height:100vh; box-shadow:none; } }
+  @page { size:A4; margin:0; }
 </style></head><body>
 <div class="savebar"><p>Your report is ready — choose where to save it as a PDF.</p><button onclick="window.print()">Save as PDF</button></div>
-<div class="head"><img src="https://www.material-reuse.co.uk/wp-content/uploads/2024/02/mrg-logo-white.svg" alt="Material Reuse Group">
-  <div class="r"><div class="kicker">${r.verified ? 'Independently verified' : 'Carbon reporting'}</div>
-  <h1>Carbon Savings Report</h1></div></div>
-<div class="band"></div>
-<div class="page">
-  <div class="meta">
-    <div><b>Prepared for</b><span>${esc(u.name)}${u.organisation ? ' · ' + esc(u.organisation) : ''}</span></div>
-    <div><b>Membership</b><span>${esc(tierName)}</span></div>
-    <div><b>Report date</b><span>${dateStr}</span></div>
-    <div><b>Reference</b><span>${ref}</span></div>
+<div class="sheet">
+  <div class="head">
+    ${lockup}
+    <div class="r">
+      <div class="kicker">${r.verified ? 'Independently verified' : 'Carbon reporting'}</div>
+      <h1>Carbon Savings Report</h1>
+      <div class="sub">Reference ${ref} · Issued ${dateStr}</div>
+    </div>
   </div>
+  <div class="band"></div>
+  <div class="inner">
+    <div class="cert">
+      <div class="lead">This report certifies that</div>
+      <div class="cert-name">${esc(u.name)}</div>
+      ${u.organisation ? `<div class="org">${esc(u.organisation)}</div>` : ''}
+      <div class="mid">has avoided a total of</div>
+      <div class="cert-big">${kg(r.totalSavedKg)} kg CO₂e</div>
+      <p class="capt">of embodied carbon by choosing reused materials through the Material Reuse Group online warehouse — keeping materials in use and out of the waste stream.</p>
+      <span class="period">${period}</span>
+    </div>
 
-  <section>
-    <div class="sec-t">Headline figures</div>
     <div class="stats">
-      <div class="stat"><b>Total CO₂e avoided</b><div class="n">${kg(r.totalSavedKg)} kg</div><i>${r.verified ? 'Independently verified' : 'Estimated from product passport data'}</i></div>
       <div class="stat"><b>Equivalent car miles</b><div class="n">${(r.equivalents.carMiles || 0).toLocaleString('en-GB')}</div><i>Average petrol car emissions</i></div>
       <div class="stat"><b>Tree-years of absorption</b><div class="n">${(r.equivalents.treeYears || 0).toLocaleString('en-GB')}</div><i>Mature broadleaf equivalent</i></div>
+      <div class="stat"><b>Items rehomed</b><div class="n">${(u.itemsRehomed || 0).toLocaleString('en-GB')}</div><i>Diverted from the waste stream</i></div>
     </div>
-  </section>
 
-  ${(r.monthly || []).length ? `<section>
-    <div class="sec-t">Monthly savings</div>
-    <table><tr><th>Month</th><th style="width:45%"></th><th style="text-align:right">kg CO₂e</th></tr>
-      ${r.monthly.map((m) => `<tr><td>${monthLong(m.month)}</td>
-        <td><div class="bar"><i style="width:${Math.max(2, (m.kg / maxM) * 100)}%"></i></div></td>
-        <td class="num">${kg(m.kg)}</td></tr>`).join('')}
-      <tr><td style="font-weight:700">Total</td><td></td><td class="num" style="font-weight:700">${kg(r.monthly.reduce((s, m) => s + m.kg, 0))}</td></tr>
-    </table>
-  </section>` : ''}
+    ${(r.monthly || []).length || (r.byCategory || []).length ? `<div class="cols">
+      ${(r.monthly || []).length ? `<div>
+        <div class="sec-t">Monthly savings</div>
+        <table><tr><th>Month</th><th style="width:34%"></th><th style="text-align:right">kg CO₂e</th></tr>
+          ${r.monthly.map((m) => `<tr><td>${monthLong(m.month)}</td>
+            <td><div class="bar"><i style="width:${Math.max(2, (m.kg / maxM) * 100)}%"></i></div></td>
+            <td class="num">${kg(m.kg)}</td></tr>`).join('')}
+        </table>
+      </div>` : '<div></div>'}
+      ${(r.byCategory || []).length ? `<div>
+        <div class="sec-t">By material category</div>
+        <table><tr><th>Category</th><th style="width:34%"></th><th style="text-align:right">kg CO₂e</th></tr>
+          ${r.byCategory.map((c) => `<tr><td>${esc(c.category)}</td>
+            <td><div class="bar"><i style="width:${Math.max(2, (c.kg / maxC) * 100)}%"></i></div></td>
+            <td class="num">${kg(c.kg)}</td></tr>`).join('')}
+        </table>
+      </div>` : '<div></div>'}
+    </div>` : ''}
 
-  ${(r.byCategory || []).length ? `<section>
-    <div class="sec-t">Savings by material category</div>
-    <table><tr><th>Category</th><th style="width:45%"></th><th style="text-align:right">kg CO₂e</th></tr>
-      ${r.byCategory.map((c) => `<tr><td>${esc(c.category)}</td>
-        <td><div class="bar"><i style="width:${Math.max(2, (c.kg / maxC) * 100)}%"></i></div></td>
-        <td class="num">${kg(c.kg)}</td></tr>`).join('')}
-    </table>
-  </section>` : ''}
+    ${r.wlcaModules ? `<div style="margin-top:8mm">
+      <div class="sec-t">Whole-life carbon assessment modules</div>
+      <table><tr><th>Module</th><th style="text-align:right">kg CO₂e</th></tr>
+        ${Object.entries(r.wlcaModules).map(([k, v]) => `<tr><td>${esc(k)}</td>
+          <td class="num" style="color:${v < 0 ? '#B42318' : '#1d7a05'}">${v < 0 ? '+' : '−'}${kg(Math.abs(v))}</td></tr>`).join('')}
+      </table>
+      <p style="margin-top:7px;font-size:10px;color:var(--mut)">A1–A3 manufacture avoided by reuse; A4 transport added; Module D end-of-life benefits. Suitable for BREEAM Mat 06 / GLA circular economy reporting.</p>
+    </div>` : ''}
 
-  ${r.wlcaModules ? `<section>
-    <div class="sec-t">Whole-life carbon assessment modules</div>
-    <table><tr><th>Module</th><th style="text-align:right">kg CO₂e</th></tr>
-      ${Object.entries(r.wlcaModules).map(([k, v]) => `<tr><td>${esc(k)}</td>
-        <td class="num" style="color:${v < 0 ? '#B42318' : '#1d7a05'}">${v < 0 ? '+' : '−'}${kg(Math.abs(v))}</td></tr>`).join('')}
-    </table>
-    <p style="margin-top:8px;font-size:10.5px;color:#5A6785">A1–A3 manufacture avoided by reuse; A4 transport added; Module D end-of-life benefits. Suitable for BREEAM Mat 06 / GLA circular economy reporting.</p>
-  </section>` : ''}
-
-  <section>
-    <div class="sec-t">Basis of this report</div>
     <div class="verify">${r.verified
       ? `This report has been independently verified${r.verifier ? ` by <b>${esc(r.verifier)}</b>` : ''}. Figures are calculated from product passport data for each reused item supplied through the Material Reuse Group online warehouse, using embodied-carbon factors for avoided manufacture.`
-      : 'Figures in this report are estimated from product passport data for each reused item supplied through the Material Reuse Group online warehouse, using embodied-carbon factors for avoided manufacture. Contact your account manager to arrange independent verification.'}
+      : 'Figures in this report are calculated from product passport data for each reused item supplied through the Material Reuse Group online warehouse, using embodied-carbon factors for avoided manufacture. Contact your account manager to arrange independent verification.'}
     </div>
-  </section>
 
+    <div class="signrow">
+      <div class="sign"><div class="line"></div><span>${r.verified && r.verifier ? esc(r.verifier) : 'Material Reuse Group'}</span><b>${r.verified ? 'Independent verifier' : 'Issued by'}</b></div>
+      <div class="sign"><div class="line"></div><span>${dateStr}</span><b>Date of issue</b></div>
+    </div>
+    <div class="grow"></div>
+  </div>
   <div class="foot">
-    <div><b>Material Reuse Group</b> · Building a sustainable future, one material at a time.</div>
-    <div>material-reuse.co.uk · kallie@material-reuse.co.uk · 01932 867989</div>
+    <div class="tag">Building a sustainable future, one material at a time.<small>From ‘waste’ to worth — Material Reuse Group</small></div>
+    <div class="c"><b>MATERIAL REUSE GROUP</b><br>material-reuse.co.uk · kallie@material-reuse.co.uk · 01932 867989</div>
   </div>
 </div>
 </body></html>`);
