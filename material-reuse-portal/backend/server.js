@@ -20,42 +20,94 @@ const DATA_DIR = path.join(__dirname, 'data');
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 
 // ---------- load data ----------
+// The JSON files in backend/data are the seed data. When SUPABASE_URL and
+// SUPABASE_SERVICE_KEY are set (e.g. on Render), every collection is loaded
+// from and saved to a Supabase `portal_data` table instead, so nothing is
+// lost when the host wipes its disk on redeploy. Locally (no env vars) it
+// just uses the files, exactly as before. Requires Node 18+ (global fetch).
+const SUPA_URL = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+const SUPA_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+const SUPA = !!(SUPA_URL && SUPA_KEY);
+
 const load = (f) => JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'));
 const db = {
-  tiers: load('tiers.json').tiers,
+  tiers: load('tiers.json').tiers, // tiers are config — always ship with the code
   users: load('users.json').users,
   inventory: load('inventory.json').items,
   orders: load('orders.json').orders,
   lists: load('lists.json').lists,
   carbon: load('carbon.json').carbon,
   projects: load('projects.json').projects,
+  materials: load('materials.json').materials,
+  documents: load('documents.json').documents,
+  requests: load('requests.json').requests,
+  impactEvents: load('impactEvents.json').impactEvents,
+};
+const PERSISTED = ['users', 'inventory', 'orders', 'lists', 'carbon', 'projects', 'materials', 'documents', 'requests', 'impactEvents'];
+
+const supaHeaders = {
+  apikey: SUPA_KEY,
+  Authorization: `Bearer ${SUPA_KEY}`,
+  'Content-Type': 'application/json',
+  Prefer: 'resolution=merge-duplicates,return=minimal',
 };
 
-const save = (f, body) =>
-  fs.writeFileSync(path.join(DATA_DIR, f), JSON.stringify(body, null, 2));
-const saveUsers = () => save('users.json', { users: db.users });
-const saveCarbon = () => save('carbon.json', { carbon: db.carbon });
-const saveOrders = () => save('orders.json', { orders: db.orders });
-const saveLists = () => save('lists.json', { lists: db.lists });
-const saveProjects = () => save('projects.json', { projects: db.projects });
-const saveInventory = () => save('inventory.json', { items: db.inventory });
+async function supaLoad() {
+  const res = await fetch(`${SUPA_URL}/rest/v1/portal_data?select=key,body`, { headers: supaHeaders });
+  if (!res.ok) throw new Error(`Supabase read failed (${res.status}): ${await res.text()}`);
+  const rows = await res.json();
+  const byKey = Object.fromEntries(rows.map((r) => [r.key, r.body]));
+  const seed = [];
+  for (const key of PERSISTED) {
+    if (byKey[key] !== undefined) db[key] = byKey[key];
+    else seed.push({ key, body: db[key] }); // first boot — push the seed data up
+  }
+  if (seed.length) {
+    const up = await fetch(`${SUPA_URL}/rest/v1/portal_data`, {
+      method: 'POST', headers: supaHeaders, body: JSON.stringify(seed),
+    });
+    if (!up.ok) throw new Error(`Supabase seed failed (${up.status}): ${await up.text()}`);
+    console.log(`  seeded Supabase with: ${seed.map((s) => s.key).join(', ')}`);
+  }
+}
 
-let orderSeq = db.orders.reduce((m, o) => {
-  const n = /^ORD-\d+-(\d+)$/.exec(o.id);
-  return n ? Math.max(m, +n[1]) : m;
-}, 1299) + 1;
-let listSeq = db.lists.reduce((m, l) => {
-  const n = /^L-(\d+)$/.exec(l.id);
-  return n ? Math.max(m, +n[1]) : m;
-}, 499) + 1;
-let projectSeq = db.projects.reduce((m, p) => {
-  const n = /^PRJ-(\d+)$/.exec(p.id);
-  return n ? Math.max(m, +n[1]) : m;
-}, 5000) + 1;
-let userSeq = db.users.reduce((m, u) => {
-  const n = /^u(\d+)$/.exec(u.id);
-  return n ? Math.max(m, +n[1]) : m;
-}, 0) + 1;
+function persist(key, fileBody) {
+  try { fs.writeFileSync(path.join(DATA_DIR, `${key}.json`), JSON.stringify(fileBody, null, 2)); } catch (e) { /* read-only disk is fine when Supabase is on */ }
+  if (SUPA) {
+    fetch(`${SUPA_URL}/rest/v1/portal_data`, {
+      method: 'POST', headers: supaHeaders,
+      body: JSON.stringify([{ key, body: db[key] }]),
+    }).then((r) => { if (!r.ok) r.text().then((t) => console.error(`Supabase save '${key}' failed (${r.status}): ${t}`)); })
+      .catch((e) => console.error(`Supabase save '${key}' failed:`, e.message));
+  }
+}
+const saveUsers = () => persist('users', { users: db.users });
+const saveCarbon = () => persist('carbon', { carbon: db.carbon });
+const saveOrders = () => persist('orders', { orders: db.orders });
+const saveLists = () => persist('lists', { lists: db.lists });
+const saveProjects = () => persist('projects', { projects: db.projects });
+const saveInventory = () => persist('inventory', { items: db.inventory });
+
+let orderSeq, listSeq, projectSeq, userSeq;
+function initSeqs() { // derived from the loaded data, so IDs never collide after a restart
+  orderSeq = db.orders.reduce((m, o) => {
+    const n = /^ORD-\d+-(\d+)$/.exec(o.id);
+    return n ? Math.max(m, +n[1]) : m;
+  }, 1299) + 1;
+  listSeq = db.lists.reduce((m, l) => {
+    const n = /^L-(\d+)$/.exec(l.id);
+    return n ? Math.max(m, +n[1]) : m;
+  }, 499) + 1;
+  projectSeq = db.projects.reduce((m, p) => {
+    const n = /^PRJ-(\d+)$/.exec(p.id);
+    return n ? Math.max(m, +n[1]) : m;
+  }, 5000) + 1;
+  userSeq = db.users.reduce((m, u) => {
+    const n = /^u(\d+)$/.exec(u.id);
+    return n ? Math.max(m, +n[1]) : m;
+  }, 0) + 1;
+}
+initSeqs();
 
 // ---------- auth helpers ----------
 const SESSIONS = new Map(); // token -> userId
@@ -98,6 +150,15 @@ const readBody = (req) =>
     });
   });
 
+// ---------- features module (impact ledger, passports, documents, requests, uploads) ----------
+// All live stats come from the impact ledger inside this module — see backend/features.js
+const features = require('./features')({
+  db, json, readBody, persist, SUPA, SUPA_URL, supaHeaders, DATA_DIR,
+  saveUsers, saveCarbon, saveOrders, saveLists, saveProjects, saveInventory,
+  nextProjectSeq: () => projectSeq++,
+});
+const applyOrderStats = features.applyOrderStats;
+
 const userById = (id) => db.users.find((u) => u.id === id);
 const userByEmail = (e) =>
   db.users.find((u) => u.email.toLowerCase() === String(e || '').trim().toLowerCase());
@@ -123,12 +184,50 @@ async function api(req, res, url) {
     return json(res, 200, { token, user: safeUser(u), tier: tierOf(u) });
   }
 
+  // POST /api/auth/register — self-service signup. ALWAYS the free tier:
+  // paid tiers are only ever set by admins or via the membership enquiry.
+  if (req.method === 'POST' && url.pathname === '/api/auth/register') {
+    const b = await readBody(req);
+    const name = String(b.name || '').trim();
+    const email = String(b.email || '').trim();
+    if (name.length < 2) return json(res, 400, { error: 'Please enter your full name.' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return json(res, 400, { error: 'Please enter a valid email address.' });
+    if (!b.password || String(b.password).length < 8)
+      return json(res, 400, { error: 'Password must be at least 8 characters.' });
+    if (userByEmail(email))
+      return json(res, 409, { error: 'An account with that email already exists — try signing in.' });
+    const u = {
+      id: `u${userSeq++}`,
+      role: 'member',
+      name,
+      email,
+      tier: 'domestic-free',
+      memberSince: new Date().toISOString().slice(0, 10),
+      avatarInitials: initials(name),
+      organisation: null, phone: null, address: null,
+      carbonSavedKg: 0, itemsRehomed: 0,
+      notifications: { newStock: true, orderUpdates: true, newsletter: true },
+      billing: { method: null, nextPayment: null, invoices: [] },
+      auth: { ...makeAuth(b.password), mustChange: false },
+    };
+    db.users.push(u);
+    db.carbon[u.id] = { verified: false };
+    saveUsers(); saveCarbon();
+    const token = crypto.randomBytes(32).toString('hex');
+    SESSIONS.set(token, u.id);
+    return json(res, 201, { token, user: safeUser(u), tier: tierOf(u) });
+  }
+
   // ----- everything below requires a valid session -----
   const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const actorId = SESSIONS.get(bearer);
   const actor = actorId ? userById(actorId) : null;
   if (!actor) return json(res, 401, { error: 'Not signed in.' });
   const isAdmin = actor.role === 'admin';
+
+  // passports · documents · requests · impact · uploads (backend/features.js)
+  if (await features.handle(req, res, url, actor, isAdmin)) return;
 
   // POST /api/auth/logout
   if (req.method === 'POST' && url.pathname === '/api/auth/logout') {
@@ -197,12 +296,7 @@ async function api(req, res, url) {
         auth: makeAuth(b.password),
       };
       db.users.push(u);
-      db.carbon[u.id] = {
-        totalSavedKg: +b.carbonSavedKg || 0,
-        monthly: [], byCategory: [],
-        equivalents: { carMiles: 0, treeYears: 0 },
-        verified: false,
-      };
+      db.carbon[u.id] = { verified: false };
       saveUsers(); saveCarbon();
       return json(res, 201, { user: safeUser(u) });
     }
@@ -214,10 +308,11 @@ async function api(req, res, url) {
       if (req.method === 'PATCH') {
         const b = await readBody(req);
         ['type', 'placed', 'status', 'fulfilment', 'slot', 'total', 'memberDiscount',
-         'deliveryFee', 'carbonSavedKg', 'note'].forEach((k) => {
+         'deliveryFee', 'carbonSavedKg', 'note', 'projectId'].forEach((k) => {
           if (b[k] !== undefined) order[k] = b[k];
         });
         if (Array.isArray(b.items)) order.items = b.items;
+        applyOrderStats(order); // fires once when the order reaches a done status
         saveOrders();
         return json(res, 200, { order });
       }
@@ -234,18 +329,24 @@ async function api(req, res, url) {
       if (!p) return json(res, 404, { error: 'Project not found' });
       if (req.method === 'PATCH') {
         const b = await readBody(req);
-        ['name', 'type', 'status', 'auditRef', 'started', 'target', 'summary',
-         'carbonSavedKg', 'linkedList'].forEach((k) => {
+        ['name', 'type', 'status', 'auditRef', 'started', 'target', 'summary', 'linkedList',
+         'site', 'address', 'client', 'contact'].forEach((k) => {
           if (b[k] !== undefined) p[k] = b[k];
         });
-        if (b.progress !== undefined) p.progress = Math.max(0, Math.min(100, +b.progress || 0));
-        if (Array.isArray(b.documents)) p.documents = b.documents;
+        if (b.stage !== undefined) { p.stage = Math.max(0, Math.min(5, Math.round(+b.stage || 0))); p.progress = Math.round((p.stage / 5) * 100); }
+        else if (b.progress !== undefined) { p.progress = Math.max(0, Math.min(100, +b.progress || 0)); p.stage = Math.round((p.progress / 100) * 5); }
+        if (p.stage === 5 && b.status === undefined) p.status = 'Complete';
+        if (Array.isArray(b.documents)) features.syncProjectDocs(p, b.documents);
+        features.recomputeProject(p.id); // carbon figure is always the ledger total
         saveProjects();
-        return json(res, 200, { project: p });
+        return json(res, 200, { project: { ...p, documents: features.projectDocs(p) } });
       }
       if (req.method === 'DELETE') {
         db.projects = db.projects.filter((x) => x.id !== p.id);
-        saveProjects();
+        db.materials.forEach((mat) => { if (mat.projectId === p.id) mat.projectId = null; });
+        db.documents.forEach((d) => { if (d.projectId === p.id) d.projectId = null; });
+        db.impactEvents.forEach((e) => { if (e.projectId === p.id) e.projectId = null; });
+        saveProjects(); features.saveMaterials(); features.saveDocuments(); features.saveEvents();
         return json(res, 200, { ok: true });
       }
     }
@@ -262,8 +363,12 @@ async function api(req, res, url) {
           tier: tierOf(u),
           orders: db.orders.filter((o) => o.userId === u.id),
           lists: db.lists.filter((l) => l.userId === u.id),
-          projects: db.projects.filter((p) => p.userId === u.id),
-          report: db.carbon[u.id] || null,
+          projects: db.projects.filter((p) => p.userId === u.id).map((p) => ({ ...p, documents: features.projectDocs(p) })),
+          materials: db.materials.filter((x) => x.userId === u.id),
+          documents: db.documents.filter((d) => d.userId === u.id),
+          requests: db.requests.filter((r) => r.userId === u.id),
+          report: features.carbonReportFor(u.id),
+          impact: features.computeImpact({ userId: u.id }),
         });
       }
 
@@ -284,8 +389,10 @@ async function api(req, res, url) {
           deliveryFee: b.deliveryFee !== undefined ? +b.deliveryFee : undefined,
           carbonSavedKg: +b.carbonSavedKg || 0,
           note: b.note || undefined,
+          projectId: b.projectId || undefined,
         };
         db.orders.unshift(order);
+        applyOrderStats(order); // in case it's logged already-collected
         saveOrders();
         return json(res, 201, { order });
       }
@@ -293,23 +400,27 @@ async function api(req, res, url) {
       // POST /api/admin/members/:id/projects — log a project / audit
       if (req.method === 'POST' && parts[4] === 'projects') {
         const b = await readBody(req);
+        const stage = b.stage !== undefined ? Math.max(0, Math.min(5, Math.round(+b.stage || 0)))
+          : Math.round((Math.max(0, Math.min(100, +b.progress || 0)) / 100) * 5);
         const project = {
           id: `PRJ-${projectSeq++}`,
           userId: u.id,
           name: b.name || 'New project',
           type: b.type || 'Pre-refurbishment audit',
-          status: b.status || 'Planning',
+          status: b.status || (stage === 5 ? 'Complete' : 'Planning'),
           auditRef: b.auditRef || undefined,
+          site: b.site || '', address: b.address || '', client: b.client || '', contact: b.contact || '',
           started: b.started || new Date().toISOString().slice(0, 10),
           target: b.target || null,
           summary: b.summary || '',
-          progress: Math.max(0, Math.min(100, +b.progress || 0)),
-          carbonSavedKg: +b.carbonSavedKg || 0,
-          documents: Array.isArray(b.documents) ? b.documents : [],
+          stage, progress: Math.round((stage / 5) * 100),
+          carbonSavedKg: 0, // derived from the impact ledger
+          collections: [],
         };
         db.projects.push(project);
+        if (Array.isArray(b.documents)) features.syncProjectDocs(project, b.documents);
         saveProjects();
-        return json(res, 201, { project });
+        return json(res, 201, { project: { ...project, documents: features.projectDocs(project) } });
       }
 
       // POST /api/admin/members/:id/password { password }
@@ -322,20 +433,20 @@ async function api(req, res, url) {
         return json(res, 200, { ok: true });
       }
 
-      // GET /api/admin/members/:id/carbon
+      // GET /api/admin/members/:id/carbon — computed from the impact ledger
       if (req.method === 'GET' && parts[4] === 'carbon') {
-        return json(res, 200, { report: db.carbon[u.id] || null });
+        return json(res, 200, { report: features.carbonReportFor(u.id), meta: db.carbon[u.id] || {} });
       }
 
-      // PUT /api/admin/members/:id/carbon — replace the carbon report
+      // PUT /api/admin/members/:id/carbon — verification metadata only (figures live in the ledger)
       if (req.method === 'PUT' && parts[4] === 'carbon') {
         const b = await readBody(req);
-        if (!b || typeof b !== 'object' || Array.isArray(b))
-          return json(res, 400, { error: 'Carbon report must be a JSON object.' });
-        db.carbon[u.id] = b;
-        if (typeof b.totalSavedKg === 'number') u.carbonSavedKg = b.totalSavedKg;
-        saveCarbon(); saveUsers();
-        return json(res, 200, { report: db.carbon[u.id] });
+        const meta = { verified: !!b.verified };
+        if (b.verifier) meta.verifier = String(b.verifier);
+        if (b.wlcaModules && typeof b.wlcaModules === 'object' && Object.keys(b.wlcaModules).length) meta.wlcaModules = b.wlcaModules;
+        db.carbon[u.id] = meta;
+        saveCarbon();
+        return json(res, 200, { report: features.carbonReportFor(u.id), meta });
       }
 
       // PATCH /api/admin/members/:id — edit anything personalised
@@ -347,8 +458,7 @@ async function api(req, res, url) {
           .forEach((k) => { if (b[k] !== undefined) u[k] = b[k]; });
         if (b.name) u.avatarInitials = initials(b.name);
         if (b.tier && db.tiers.some((t) => t.id === b.tier)) u.tier = b.tier;
-        if (b.carbonSavedKg !== undefined) u.carbonSavedKg = +b.carbonSavedKg || 0;
-        if (b.itemsRehomed !== undefined) u.itemsRehomed = Math.round(+b.itemsRehomed) || 0;
+        // carbonSavedKg / itemsRehomed are derived from the impact ledger — not editable here
         if (b.accountManager !== undefined) u.accountManager = b.accountManager || undefined;
         if (b.billing) Object.assign(u.billing = u.billing || {}, b.billing);
         if (b.notifications) Object.assign(u.notifications, b.notifications);
@@ -361,8 +471,13 @@ async function api(req, res, url) {
         if (u.role === 'admin') return json(res, 403, { error: 'Admin accounts can’t be deleted here.' });
         db.users = db.users.filter((x) => x.id !== u.id);
         delete db.carbon[u.id];
+        db.materials = db.materials.filter((x) => x.userId !== u.id);
+        db.documents = db.documents.filter((x) => x.userId !== u.id);
+        db.requests = db.requests.filter((x) => x.userId !== u.id);
+        db.impactEvents = db.impactEvents.filter((x) => x.userId !== u.id);
         for (const [t, uid] of SESSIONS) if (uid === u.id) SESSIONS.delete(t);
         saveUsers(); saveCarbon();
+        features.saveMaterials(); features.saveDocuments(); features.saveRequests(); features.saveEvents();
         return json(res, 200, { ok: true });
       }
     }
@@ -463,6 +578,7 @@ async function api(req, res, url) {
       total: +(subtotal - discount).toFixed(2),
       memberDiscount: +discount.toFixed(2) || undefined,
       carbonSavedKg: +lines.reduce((s, l) => s + l.carbon, 0).toFixed(1),
+      projectId: body.projectId && db.projects.some((p) => p.id === body.projectId && p.userId === u.id) ? body.projectId : undefined,
     };
     db.orders.unshift(order);
     saveOrders(); saveInventory();
@@ -530,7 +646,7 @@ async function api(req, res, url) {
     const u = userById(uid);
     if (!u) return json(res, 404, { error: 'User not found' });
     return json(res, 200, {
-      report: db.carbon[uid] || { totalSavedKg: 0, monthly: [], byCategory: [], equivalents: { carMiles: 0, treeYears: 0 } },
+      report: features.carbonReportFor(uid),
       level: tierOf(u) ? tierOf(u).gates.carbonReports : 'full',
     });
   }
@@ -538,7 +654,10 @@ async function api(req, res, url) {
   // GET /api/projects
   if (req.method === 'GET' && url.pathname === '/api/projects') {
     const uid = scopeUid(q.get('userId'));
-    return json(res, 200, { projects: db.projects.filter((p) => p.userId === uid) });
+    return json(res, 200, { projects: db.projects.filter((p) => p.userId === uid).map((p) => ({
+      ...p, documents: features.projectDocs(p), progress: Math.round(((p.stage || 0) / 5) * 100),
+      materialsCount: db.materials.filter((x) => x.projectId === p.id).length,
+    })) });
   }
 
   return json(res, 404, { error: 'Not found' });
@@ -571,7 +690,7 @@ function serveStatic(res, urlPath) {
   });
 }
 
-http.createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -583,14 +702,30 @@ http.createServer(async (req, res) => {
   }
   try {
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
+    if (url.pathname.startsWith('/uploads/')) return features.serveUpload(res, url.pathname);
     return serveStatic(res, url.pathname);
   } catch (err) {
     console.error(err);
     return json(res, 500, { error: 'Server error' });
   }
-}).listen(PORT, () => {
-  console.log('');
-  console.log('  material reuse — member portal');
-  console.log(`  → http://localhost:${PORT}`);
-  console.log('');
 });
+
+(async () => {
+  if (SUPA) {
+    try {
+      await supaLoad();
+      initSeqs(); // re-derive from the data we actually loaded
+      console.log('  data store: Supabase');
+    } catch (e) {
+      console.error('  ⚠ Supabase unavailable, using bundled data:', e.message);
+    }
+  }
+  features.migrate(); // one-time data upgrades (no-ops once done)
+  initSeqs();
+  server.listen(PORT, () => {
+    console.log('');
+    console.log('  material reuse — member portal');
+    console.log(`  → http://localhost:${PORT}  (data: ${SUPA ? 'Supabase' : 'local JSON files'})`);
+    console.log('');
+  });
+})();
