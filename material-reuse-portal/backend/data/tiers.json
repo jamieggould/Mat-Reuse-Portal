@@ -23,7 +23,11 @@
         "audits": false,
         "memberDiscount": 0,
         "accountManager": false,
-        "delivery": true
+        "delivery": true,
+        "passports": true,
+        "documents": true,
+        "offerMaterials": true,
+        "impactCentre": false
       }
     },
     {
@@ -51,7 +55,11 @@
         "audits": false,
         "memberDiscount": 5,
         "accountManager": false,
-        "delivery": true
+        "delivery": true,
+        "passports": true,
+        "documents": true,
+        "offerMaterials": true,
+        "impactCentre": false
       }
     },
     {
@@ -80,7 +88,11 @@
         "audits": false,
         "memberDiscount": 5,
         "accountManager": false,
-        "delivery": true
+        "delivery": true,
+        "passports": true,
+        "documents": true,
+        "offerMaterials": true,
+        "impactCentre": false
       }
     },
     {
@@ -114,7 +126,11 @@
         "audits": true,
         "memberDiscount": 5,
         "accountManager": true,
-        "delivery": true
+        "delivery": true,
+        "passports": true,
+        "documents": true,
+        "offerMaterials": true,
+        "impactCentre": true
       }
     }
   ]
