@@ -265,10 +265,10 @@ RENDER.warehouse = async () => {
     <div class="card" style="margin-top:28px">
       <h3 style="margin-bottom:6px">Can’t see what you need? Join the wishlist</h3>
       <p class="small muted" style="margin-bottom:14px">Tell us what you’re after and we’ll let you know when it comes through a strip-out.</p>
-      <div style="position:relative">
+      ${state.tier.gates.materialSourcing ? `<div style="position:relative">
         <iframe class="airtable-embed" src="https://airtable.com/embed/appiHCw9vidbsic9y/pagMtURovTN6nNryp/form?prefill_Status=Active&hide_Status=true" frameborder="0" onmousewheel="" width="100%" height="620" style="background: transparent; border: 1px solid #DDE2EC; display:block;"></iframe>
         <div style="position:absolute; bottom:1px; left:1px; right:18px; height:56px; background:#ffffff; pointer-events:none;"></div>
-      </div>
+      </div>` : `<div class="empty">Material sourcing is part of <b>Domestic Plus Membership</b> and above. <a href="#" onclick="go('membership');return false">Compare memberships</a></div>`}
     </div>`;
 };
 
@@ -358,7 +358,6 @@ RENDER.orders = async () => {
       <div class="order-foot">
         <span><span class="k">Slot</span><b>${esc(o.slot)}</b></span>
         ${o.total ? `<span><span class="k">Total</span><b>${fmtGBP(o.total)}</b>${o.deliveryFee ? ` <span class="muted small">(+${fmtGBP(o.deliveryFee)} delivery)</span>` : ''}</span>` : ''}
-        ${o.memberDiscount ? `<span class="pill pill-green">member discount −${fmtGBP(o.memberDiscount)}</span>` : ''}
         ${o.depositGBP ? `<span><span class="k">Deposit paid</span><b>${fmtGBP(o.depositGBP)}</b></span><span><span class="k">${o.balancePaid ? 'Balance' : 'Balance on collection'}</span><b>${o.balancePaid ? 'Paid' : fmtGBP(o.balanceDueGBP)}</b></span>` : ''}
         <span><span class="k">Carbon saved</span><b>${fmtKg(o.carbonSavedKg)} CO₂e</b></span>
       </div>
@@ -469,7 +468,7 @@ function carbonSection(r, g) {
     <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
       ${g.carbonReports === 'full' || g.carbonReports === 'verified'
         ? `<button class="btn btn-primary" onclick="downloadCarbonReport()">Download ${g.carbonReports === 'verified' ? 'verified' : ''} carbon report (PDF)</button>`
-        : `<button class="btn btn-ghost" disabled>Downloadable reports — Community tier and above</button>`}
+        : `<button class="btn btn-ghost" disabled>Downloadable reports — Corporate Reuse Partnership</button>`}
     </div>`;
 }
 
@@ -1226,7 +1225,6 @@ function orderModal(oid) {
         <div><label>Collection / delivery slot</label><input id="odSlot" value="${esc(o.slot || '')}" placeholder="e.g. Mon 20 Jul, 14:00–16:00"></div>
         <div style="grid-column:1/-1"><label>Fulfilment</label><input id="odFulfil" value="${esc(o.fulfilment || 'Collection — Material Reuse Group warehouse')}"></div>
         <div><label>Total (£)</label><input id="odTotal" type="number" step="0.01" value="${o.total ?? ''}" placeholder="Leave blank if free"></div>
-        <div><label>Member discount (£)</label><input id="odDisc" type="number" step="0.01" value="${o.memberDiscount ?? ''}" placeholder="Optional"></div>
         <div><label>Delivery fee (£)</label><input id="odFee" type="number" step="0.01" value="${o.deliveryFee ?? ''}" placeholder="Optional"></div>
         <div><label>Carbon saved (kg CO₂e)</label><input id="odCarbon" type="number" step="0.1" value="${o.carbonSavedKg || 0}"></div>
         <div style="grid-column:1/-1"><label>Note (shown to member)</label><input id="odNote" value="${esc(o.note || '')}" placeholder="Optional — e.g. Please bring a van and one extra pair of hands"></div>
@@ -1260,7 +1258,7 @@ async function saveOrder(oid) {
     type: $('#odType').value, status: $('#odStatus').value,
     placed: $('#odPlaced').value, slot: $('#odSlot').value,
     fulfilment: $('#odFulfil').value, note: $('#odNote').value || undefined,
-    total: num('#odTotal'), memberDiscount: num('#odDisc'), deliveryFee: num('#odFee'),
+    total: num('#odTotal'), deliveryFee: num('#odFee'),
     carbonSavedKg: parseFloat($('#odCarbon').value) || 0, items,
   };
   try {
