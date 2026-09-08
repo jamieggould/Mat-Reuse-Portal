@@ -420,12 +420,6 @@ tr:last-child td { border-bottom: 0; }
 .qr-wrap .qr-mark { position: absolute; left: 39%; top: 39%; width: 22%; height: 22%; background: #fff; padding: 1px; }
 
 /* "group" caption under the hotlinked wordmark so every lockup reads Material Reuse Group */
-/* The real MRG logo (ring + "material reuse") with "group" set as a third line of the wordmark.
-   Offsets are proportional to the image height so the word lines up with the wordmark's left edge and line pitch. */
-.logo-lock { position: relative; display: inline-block; line-height: 0; }
-.logo-lock img { display: block; }
-.logo-lock .grp { position: absolute; font-family: var(--font-head); font-weight: 600; color: #fff; line-height: 1; white-space: nowrap; }
-.side-logo .logo-lock { margin-bottom: 22px; }
-.side-logo .logo-lock .grp { left: 58.5px; top: 37.8px; font-size: 22.9px; }   /* image height 44px */
-.login-logo .logo-lock { margin-bottom: 26px; }
-.login-logo .logo-lock .grp { left: 74.5px; top: 48.2px; font-size: 29.1px; }  /* image height 56px */
+/* Official Material Reuse Group logo (frontend/assets/mrg-logo-group.png) */
+.side-logo img.brand { height: 50px; width: auto; max-width: 100%; display: block; }
+.login-logo img.brand { height: 60px; width: auto; max-width: 100%; }
