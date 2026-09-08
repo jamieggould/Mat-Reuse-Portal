@@ -43,7 +43,7 @@ module.exports = function install(ctx) {
     return `<!DOCTYPE html><html><body style="margin:0;background:#F5F6F9;font-family:Inter,Helvetica,Arial,sans-serif;color:#06183F">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F6F9;padding:28px 12px"><tr><td align="center">
 <table width="580" cellpadding="0" cellspacing="0" style="max-width:580px;background:#fff;border:1px solid #DDE2EC">
-  <tr><td style="background:#06183F;padding:26px 32px"><span style="font-family:Geologica,Inter,Helvetica,sans-serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:.01em">material reuse group</span><br><span style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#9EFF51;font-weight:600">Member portal</span></td></tr>
+  <tr><td style="background:#06183F;padding:26px 32px"><img src="${ENV.PORTAL_URL}/assets/mrg-logo-group-sm.png" alt="Material Reuse Group" height="40" style="height:40px;width:auto;display:block;margin-bottom:8px"><br><span style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#9EFF51;font-weight:600">Member portal</span></td></tr>
   <tr><td style="height:5px;background:#9EFF51;font-size:0">&nbsp;</td></tr>
   <tr><td style="padding:30px 32px 8px"><h1 style="margin:0 0 14px;font-family:Geologica,Inter,Helvetica,sans-serif;font-size:22px;font-weight:700;line-height:1.25">${esc(title)}</h1>
     <div style="font-size:14px;line-height:1.6;color:#2A3655">${bodyHtml}</div>
