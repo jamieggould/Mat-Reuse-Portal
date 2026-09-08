@@ -850,6 +850,16 @@ const server = http.createServer(async (req, res) => {
       console.error('  ⚠ Supabase unavailable, using bundled data:', e.message);
     }
   }
+  // Admin accounts listed in backend/data/users.json always exist — add any that are missing (by email).
+  // So adding an admin = add them to users.json and redeploy; existing accounts are never overwritten.
+  try {
+    const seedAdmins = load('users.json').users.filter((u) => u.role === 'admin');
+    const added = seedAdmins.filter((a) => !db.users.some((u) => u.email.toLowerCase() === a.email.toLowerCase()));
+    if (added.length) {
+      added.forEach((a) => { if (db.users.some((u) => u.id === a.id)) a.id = `a${Date.now().toString(36)}`; db.users.push(a); });
+      saveUsers(); console.log(`  admins added from seed: ${added.map((a) => a.email).join(', ')}`);
+    }
+  } catch (e) { console.error('  admin seed check:', e.message); }
   features.migrate(); // one-time data upgrades (no-ops once done)
   initSeqs();
   SESSIONS.sweep();
