@@ -496,7 +496,7 @@ async function downloadCarbonReport() {
       <path d="M9.23 26.60 A15 15 0 0 0 20.12 38.49" stroke="#35A94D"/>
       <path d="M26.60 38.77 A15 15 0 0 0 38.49 27.88" stroke="#0F8A6D"/>
     </g></svg>`;
-  const lockup = `<div class="lockup">${logoSVG}<div class="wordmark">material<br>reuse group</div></div>`;
+  const lockup = `<div class="lockup"><img src="${location.origin}/assets/mrg-logo-group-sm.png" alt="Material Reuse Group" style="height:46px;width:auto;display:block"></div>`;
 
   const w = window.open('', '_blank');
   if (!w) { toast('Please allow pop-ups to download your report'); return; }
