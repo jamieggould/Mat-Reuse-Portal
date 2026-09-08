@@ -334,10 +334,7 @@ async function openMaterial(id) {
         <button class="btn btn-ghost btn-sm" style="margin-top:8px;border-color:#fff;color:#fff" onclick="downloadQR('${esc(x.id)}','${esc(x.ref)}')">Download QR label (PNG)</button></div></div>
       <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="passportDoc('${esc(x.id)}')">Download passport (PDF)</button>
-        ${x.sku && !isAdmin && x.availability === 'Available' && (x.buyUrl || x.reserveUrl) ? `
-          ${x.buyUrl ? `<button class="btn btn-green" onclick="checkoutItem('${esc(x.buyUrl)}')">Buy now · ${fmtGBP(x.listedPrice || 0)}</button>` : ''}
-          ${x.reserveUrl && state.tier && state.tier.gates.reservations ? `<button class="btn btn-green" onclick="checkoutItem('${esc(x.reserveUrl)}')">Reserve with a deposit</button>` : ''}` : ''}
-        ${x.sku && !isAdmin && x.availability === 'Available' && !(x.buyUrl || x.reserveUrl) ? `<button class="btn btn-green" onclick="closeModal();go('warehouse')">See it in the warehouse</button>` : ''}
+        ${x.sku && !isAdmin && x.availability === 'Available' ? `<button class="btn btn-ghost" onclick="closeModal();go('warehouse')">Available in the warehouse</button>` : ''}
         ${x.sku && !isAdmin && x.availability && x.availability !== 'Available' ? `<span class="pill pill-yellow" style="align-self:center">${esc(x.availability)}</span>` : ''}
 
         ${d.project && !isAdmin ? `<button class="btn btn-ghost" onclick="closeModal();openProject('${esc(d.project.id)}')">Open project</button>` : ''}
