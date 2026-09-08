@@ -77,7 +77,7 @@ async function showPublicPassport(id) {
   $('#login').style.display = 'none';
   $('#publicRoot').innerHTML = `
   <div class="public-wrap"><div class="public-card">
-    <div class="public-head"><div class="lockup-mini"><span>material<br>reuse group</span></div><div class="kicker">${x.passportVerified ? 'Verified material passport' : 'Digital material passport'}</div></div>
+    <div class="public-head"><img src="/assets/mrg-logo-group-sm.png" alt="Material Reuse Group" style="height:38px;width:auto"><div class="kicker">${x.passportVerified ? 'Verified material passport' : 'Digital material passport'}</div></div>
     ${photos[0] ? `<img class="public-photo" src="${esc(photos[0].url)}" alt="">` : ''}
     <div class="public-body">
       <div class="mp-ref">${esc(x.ref)}</div>
@@ -196,9 +196,7 @@ async function downloadBlob(url, filename) {
 
 /* Branded print document (same shell as the carbon report) → save-as-PDF dialog */
 function brandDoc({ title, kicker, heading, sub, body }) {
-  const logoSVG = `<svg viewBox="0 0 48 48" width="46" height="46" aria-hidden="true"><g fill="none" stroke-width="8.6" stroke-linecap="round">
-    <path d="M38.77 21.39 A15 15 0 0 0 27.88 9.51" stroke="#9EFF51"/><path d="M21.40 9.23 A15 15 0 0 0 9.51 20.12" stroke="#6FD53C"/>
-    <path d="M9.23 26.60 A15 15 0 0 0 20.12 38.49" stroke="#35A94D"/><path d="M26.60 38.77 A15 15 0 0 0 38.49 27.88" stroke="#0F8A6D"/></g></svg>`;
+  const logoImg = `<img src="${location.origin}/assets/mrg-logo-group-sm.png" alt="Material Reuse Group" style="height:46px;width:auto;display:block">`;
   const w = window.open('', '_blank');
   if (!w) { toast('Please allow pop-ups to download this document'); return null; }
   w.document.write(`<!DOCTYPE html><html lang="en-GB"><head><meta charset="UTF-8"><title>${esc(title)}</title>
@@ -244,7 +242,7 @@ function brandDoc({ title, kicker, heading, sub, body }) {
 </style></head><body>
 <div class="savebar"><p>Your document is ready — choose where to save it as a PDF.</p><button onclick="window.print()">Save as PDF</button></div>
 <div class="sheet">
-  <div class="head"><div class="lockup">${logoSVG}<div class="wordmark">material<br>reuse group</div></div>
+  <div class="head"><div class="lockup">${logoImg}</div>
     <div class="r"><div class="kicker">${esc(kicker)}</div><h1>${esc(heading)}</h1><div class="sub">${sub}</div></div></div>
   <div class="band"></div>
   <div class="inner">${body}<div class="grow"></div></div>
