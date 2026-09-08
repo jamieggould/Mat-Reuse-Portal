@@ -496,6 +496,8 @@ module.exports = function install(ctx) {
 
     /* ---------- impact ---------- */
     if (m === 'GET' && (url.pathname === '/api/impact' || url.pathname === '/api/impact/export.csv')) {
+      const tier = db.tiers.find((t) => t.id === actor.tier);
+      if (!isAdmin && !(tier && tier.gates.impactCentre)) return json(res, 403, { error: 'The Impact & ESG centre is part of the Corporate Reuse Partnership.' }), true;
       const owner = isAdmin && q.get('userId') === 'all' ? null : scope(q.get('userId'));
       const f = { userId: owner || undefined, projectId: q.get('projectId') || undefined, site: q.get('site') || undefined,
         from: q.get('from') || undefined, to: q.get('to') || undefined };
