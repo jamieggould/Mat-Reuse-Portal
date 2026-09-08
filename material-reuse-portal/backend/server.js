@@ -401,7 +401,7 @@ async function api(req, res, url) {
       if (req.method === 'PATCH') {
         const b = await readBody(req);
         const prevSlot = order.slot;
-        ['type', 'placed', 'status', 'fulfilment', 'slot', 'total', 'memberDiscount',
+        ['type', 'placed', 'status', 'fulfilment', 'slot', 'total',
          'deliveryFee', 'carbonSavedKg', 'note', 'projectId'].forEach((k) => {
           if (b[k] !== undefined) order[k] = b[k];
         });
@@ -686,7 +686,6 @@ async function api(req, res, url) {
     }).filter(Boolean);
     if (!lines.length) return json(res, 400, { error: 'No reservable items — this item may already be reserved.' });
     const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
-    const discount = gates.memberDiscount ? subtotal * gates.memberDiscount / 100 : 0;
     const order = {
       id: `ORD-2026-${orderSeq++}`,
       userId: u.id,
@@ -695,8 +694,7 @@ async function api(req, res, url) {
       fulfilment: body.fulfilment || 'Collection — Material Reuse Group warehouse',
       slot: 'Slot to be confirmed — we’ll be in touch',
       items: lines.map(({ carbon, ...l }) => l),
-      total: +(subtotal - discount).toFixed(2),
-      memberDiscount: +discount.toFixed(2) || undefined,
+      total: +subtotal.toFixed(2),
       carbonSavedKg: +lines.reduce((s, l) => s + l.carbon, 0).toFixed(1),
       projectId: body.projectId && db.projects.some((p) => p.id === body.projectId && p.userId === u.id) ? body.projectId : undefined,
     };
@@ -766,10 +764,19 @@ async function api(req, res, url) {
     const uid = scopeUid(q.get('userId'));
     const u = userById(uid);
     if (!u) return json(res, 404, { error: 'User not found' });
+    if (!isAdmin && !(tierOf(u) && tierOf(u).gates.carbonReports)) return json(res, 403, { error: 'Carbon reporting is part of the Corporate Reuse Partnership.' });
     return json(res, 200, {
       report: features.carbonReportFor(uid),
       level: tierOf(u) ? tierOf(u).gates.carbonReports : 'full',
     });
+  }
+
+  // POST /api/audit-request — Corporate members ask for a pre-refurbishment audit (emails the team)
+  if (req.method === 'POST' && url.pathname === '/api/audit-request') {
+    if (!isAdmin && !(tierOf(actor) && tierOf(actor).gates.audits)) return json(res, 403, { error: 'Pre-refurbishment audits are part of the Corporate Reuse Partnership.' });
+    const body = await readBody(req);
+    integrations.mail.auditRequest(actor, String(body.note || '').slice(0, 2000));
+    return json(res, 200, { ok: true });
   }
 
   // GET /api/projects
