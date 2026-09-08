@@ -155,7 +155,7 @@ const catTile = (c) => `<div class="mp-tile">${esc((c || '?').slice(0, 2).toUppe
 const optList = (arr, sel) => arr.map((x) => `<option value="${esc(x)}" ${x === sel ? 'selected' : ''}>${esc(x)}</option>`).join('');
 const qrUrl = (data, size = 240) => `/api/qr?size=${size}&data=${encodeURIComponent(data)}`;
 const MRG_MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="#fff"/><g fill="none" stroke-width="8.6" stroke-linecap="round"><path d="M38.77 21.39 A15 15 0 0 0 27.88 9.51" stroke="#9EFF51"/><path d="M21.40 9.23 A15 15 0 0 0 9.51 20.12" stroke="#6FD53C"/><path d="M9.23 26.60 A15 15 0 0 0 20.12 38.49" stroke="#35A94D"/><path d="M26.60 38.77 A15 15 0 0 0 38.49 27.88" stroke="#0F8A6D"/></g></svg>`;
-const MRG_MARK_URL = 'data:image/svg+xml;utf8,' + encodeURIComponent(MRG_MARK_SVG);
+const MRG_MARK_URL = '/assets/mrg-ring.png';
 // QR with the MRG mark in the middle (error-correction H, so the centre 22% can be covered)
 const brandedQR = (data, px = 180) => `<span class="qr-wrap" style="width:${px}px;height:${px}px"><img src="${qrUrl(data, Math.max(240, px * 2))}" alt="QR code" width="${px}" height="${px}"><img class="qr-mark" src="${MRG_MARK_URL}" alt=""></span>`;
 async function downloadQR(id, ref) {
