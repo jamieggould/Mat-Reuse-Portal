@@ -16,6 +16,7 @@ const ENV = {
   AIRTABLE_TOKEN: process.env.AIRTABLE_TOKEN || '',
   AIRTABLE_BASE: process.env.AIRTABLE_BASE || 'appiHCw9vidbsic9y',
   AIRTABLE_TABLE: process.env.AIRTABLE_TABLE || 'Table 1',
+  AIRTABLE_ORDERS_TABLE: process.env.AIRTABLE_ORDERS_TABLE || 'Orders', // one row per purchase (written by the Stripe webhook)
   AIRTABLE_API: (process.env.AIRTABLE_API || 'https://api.airtable.com').replace(/\/+$/, ''),
   AIRTABLE_SYNC_MINUTES: Math.max(1, +process.env.AIRTABLE_SYNC_MINUTES || 5),
   AIRTABLE_AUTO_CREATE_MEMBERS: (process.env.AIRTABLE_AUTO_CREATE_MEMBERS || 'true') !== 'false',
@@ -72,7 +73,7 @@ module.exports = function install(ctx) {
 
   const mail = {
     welcome: (u, tempPassword) => sendMail(u.email, 'Welcome to the Material Reuse Group member portal', `Welcome, ${u.name.split(' ')[0]}`,
-      `<p>Your <b>${esc(db.tiers.find((t) => t.id === u.tier)?.name || 'membership')}</b> is live. Browse the online warehouse, keep shopping lists, offer materials from your own projects and watch your carbon savings build.</p>
+      `<p>Your <b>${esc(db.tiers.find((t) => t.id === u.tier)?.name || 'membership')}</b> is live. Browse the online warehouse, offer materials from your own projects and watch your carbon savings build.</p>
        ${tempPassword ? `<p>We created your account from your marketplace purchase so everything is in one place. Sign in with:</p><p style="background:#F5F6F9;padding:12px 16px;font-family:monospace;font-size:13px"><b>Email:</b> ${esc(u.email)}<br><b>Temporary password:</b> ${esc(tempPassword)}</p><p>You'll be asked to choose your own password on first sign-in.</p>` : ''}`,
       portalLink('Sign in')),
     resetLink: (u, token) => sendMail(u.email, 'Reset your Material Reuse Group portal password', 'Reset your password',
@@ -95,6 +96,13 @@ module.exports = function install(ctx) {
        ${r.status === 'Collection arranged' && r.desiredDate ? `<p>Collection is planned for <b>${r.desiredDate}</b>.</p>` : ''}
        ${r.status === 'Rehomed' ? '<p>Your materials have found their next life. The carbon and impact figures are now on your dashboard and in your reports.</p>' : ''}`,
       portalLink('View in the portal')),
+    auditRequest: (u, note) => Promise.all([
+      sendMail(ENV.ADMIN_EMAIL, `Audit request — ${u.name}${u.organisation ? ` (${u.organisation})` : ''}`, 'Pre-refurbishment audit requested',
+        `<p><b>${esc(u.name)}</b>${u.organisation ? ` (${esc(u.organisation)})` : ''} — ${esc(u.email)}${u.phone ? ` · ${esc(u.phone)}` : ''} — has requested a pre-refurbishment audit.</p>${note ? `<p><b>Details:</b> ${esc(note)}</p>` : ''}`,
+        { url: `${ENV.PORTAL_URL}/`, label: 'Open the portal' }),
+      sendMail(u.email, 'We’ve received your audit request', 'Audit request received',
+        `<p>Thanks ${esc(u.name.split(' ')[0])} — your account manager will be in touch within one working day to arrange your pre-refurbishment audit.</p>`, portalLink()),
+    ]),
     orderCollected: (o, u, kg) => u && sendMail(u.email, `Collected: ${o.id}`, 'Your materials are on their way to a second life',
       `<p>Order <b>${o.id}</b> has been marked collected.</p><ul>${(o.items || []).map((l) => `<li>${l.qty} × ${esc(l.title || l.sku)}</li>`).join('')}</ul>
        <p style="font-family:Geologica,Inter,sans-serif;font-size:22px;font-weight:700;color:#1653F3;margin:16px 0 4px">${Number(kg || 0).toLocaleString('en-GB')} kg CO₂e avoided</p><p>That's now counted in your dashboard and impact reports. Thank you for choosing reuse.</p>`,
@@ -105,27 +113,37 @@ module.exports = function install(ctx) {
      AIRTABLE
      ================================================================= */
   const atOn = !!ENV.AIRTABLE_TOKEN;
-  const atUrl = () => `${ENV.AIRTABLE_API}/v0/${ENV.AIRTABLE_BASE}/${encodeURIComponent(ENV.AIRTABLE_TABLE)}`;
+  const atUrl = (table = ENV.AIRTABLE_TABLE) => `${ENV.AIRTABLE_API}/v0/${ENV.AIRTABLE_BASE}/${encodeURIComponent(table)}`;
   const atHeaders = { Authorization: `Bearer ${ENV.AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' };
-  const status = { enabled: atOn, lastRun: null, lastOk: null, lastError: null, records: 0, ordersCreated: 0, membersCreated: 0, running: false };
+  const status = { enabled: atOn, lastRun: null, lastOk: null, lastError: null, records: 0, orderRows: 0, ordersCreated: 0, membersCreated: 0, running: false };
   const sel = (v) => (v && typeof v === 'object') ? (v.name || '') : (v || '');
   const parseKg = (s) => { const m = /([\d.]+)/.exec(String(s || '')); return m ? +m[1] : 0; };
 
-  async function atFetchAll() {
+  async function atFetchAll(table = ENV.AIRTABLE_TABLE) {
     const out = []; let offset;
     do {
-      const u = new URL(atUrl()); u.searchParams.set('pageSize', '100'); if (offset) u.searchParams.set('offset', offset);
+      const u = new URL(atUrl(table)); u.searchParams.set('pageSize', '100'); if (offset) u.searchParams.set('offset', offset);
       const res = await fetch(u, { headers: atHeaders });
       if (!res.ok) throw new Error(`Airtable ${res.status}: ${(await res.text()).slice(0, 200)}`);
       const j = await res.json(); out.push(...(j.records || [])); offset = j.offset;
     } while (offset);
     return out;
   }
-  async function atPatch(recordId, fields) {
+  async function atPatch(recordId, fields, table = ENV.AIRTABLE_TABLE) {
     if (!atOn || !recordId) return false;
-    const res = await fetch(`${atUrl()}/${recordId}`, { method: 'PATCH', headers: atHeaders, body: JSON.stringify({ fields, typecast: true }) });
+    const res = await fetch(`${atUrl(table)}/${recordId}`, { method: 'PATCH', headers: atHeaders, body: JSON.stringify({ fields, typecast: true }) });
     if (!res.ok) { console.error(`  Airtable write-back failed (${res.status}): ${(await res.text()).slice(0, 200)}`); return false; }
     return true;
+  }
+  async function atCreate(fields, table = ENV.AIRTABLE_ORDERS_TABLE) { // returns the new record id or null
+    if (!atOn) return null;
+    const res = await fetch(atUrl(table), { method: 'POST', headers: atHeaders, body: JSON.stringify({ records: [{ fields }], typecast: true }) });
+    if (!res.ok) { console.error(`  Airtable create failed (${res.status}): ${(await res.text()).slice(0, 200)}`); return null; }
+    const j = await res.json(); return (j.records && j.records[0] && j.records[0].id) || null;
+  }
+  async function atGet(recordId, table = ENV.AIRTABLE_TABLE) {
+    const res = await fetch(`${atUrl(table)}/${recordId}`, { headers: atHeaders });
+    return res.ok ? res.json() : null;
   }
 
   // Attachment URLs from Airtable expire, so we copy each photo into our own storage once.
@@ -171,8 +189,39 @@ module.exports = function install(ctx) {
     try {
       const records = await atFetchAll();
       status.records = records.length;
+      // Orders table (one row per purchase). Missing table → treated as empty, legacy per-item buyer fields still work.
+      let orderRows = [];
+      try { orderRows = await atFetchAll(ENV.AIRTABLE_ORDERS_TABLE); } catch (e) { console.error('  Airtable orders table:', e.message); }
+      status.orderRows = orderRows.length;
+      const itemsWithOrderRows = new Set(orderRows.flatMap((r) => (r.fields || {}).Item || []));
       const seen = new Set();
       let invChanged = false, matChanged = false, ordChanged = false;
+
+      // Turn an Airtable order (new Orders row, or legacy buyer fields on an item) into a portal order on the buyer's account
+      async function upsertOrder({ oid, airtableId, airtableOrderId, email, name, phone, placed, type, collectionStatus, slot, item, qty, unitPrice, amountPaid, balanceDue, note }) {
+        const { user } = await ensureMember(email, name, phone);
+        if (!user) return;
+        let order = db.orders.find((o) => (airtableOrderId && o.airtableOrderId === airtableOrderId) || o.id === oid);
+        const collected = collectionStatus === 'Collected';
+        const cancelled = collectionStatus === 'Cancelled';
+        const wantStatus = cancelled ? 'Cancelled' : collected ? 'Collected' : (type === 'Purchase' ? 'Awaiting collection' : 'Reserved');
+        const total = +((unitPrice || 0) * qty).toFixed(2);
+        if (!order) {
+          order = { id: oid, airtableId, airtableOrderId: airtableOrderId || null, userId: user.id, placed, status: wantStatus,
+            fulfilment: item.fulfilment === 'Available For Delivery' ? 'Delivery available — arrange with the team' : 'Collection — Material Reuse Group warehouse',
+            slot: collected ? 'Collected' : 'Slot to be confirmed — we’ll be in touch', items: [{ sku: item.sku, title: item.title, qty, price: unitPrice || 0 }],
+            total, carbonSavedKg: +((item.carbonSavedKgPerUnit || 0) * qty).toFixed(1), note, source: 'airtable' };
+          if (type === 'Deposit / Reserve') {
+            order.depositGBP = amountPaid != null ? amountPaid : +(total * ENV.DEPOSIT_PERCENT / 100).toFixed(2);
+            order.balanceDueGBP = balanceDue != null ? balanceDue : +(total - order.depositGBP).toFixed(2);
+          }
+          db.orders.unshift(order); ordChanged = true; status.ordersCreated++;
+        } else if (order.userId !== user.id) { order.userId = user.id; ordChanged = true; }
+        if (slot && slot !== order.slot && slot !== order.slotFromPortal) { order.slot = slot; order.slotFromAirtable = slot; ordChanged = true; }
+        if (collected && order.status !== 'Collected') { order.status = 'Collected'; if (!slot) order.slot = 'Collected'; if (order.balanceDueGBP) order.balancePaid = true; ordChanged = true; }
+        else if (!collected && order.status !== wantStatus && !['Collected', 'Delivered'].includes(order.status)) { order.status = wantStatus; ordChanged = true; }
+        if (order.status === 'Collected' && !order.statsApplied) { order.syncedCollected = true; features.applyOrderStats(order); ordChanged = true; }
+      }
 
       for (const rec of records) {
         const f = rec.fields || {};
@@ -211,34 +260,32 @@ module.exports = function install(ctx) {
         if (!(mat.photos || []).length && (item.photos || []).length) mnext.photos = item.photos.map((p) => ({ url: p.url, key: null, name: p.name }));
         if (Object.keys(mnext).some((k) => JSON.stringify(mat[k]) !== JSON.stringify(mnext[k]))) { Object.assign(mat, mnext); matChanged = true; }
 
-        // ---- Softr purchase / reservation → order on the buyer's account ----
+        // ---- legacy: buyer details stamped on the item itself (whole-lot sales before the Orders table existed) ----
         const email = String(f['Buyer Email'] || '').trim();
         const isOrder = ['Reserved', 'Sold'].includes(avail) || !!sel(f['Collection Status']) || !!f['Order Date'];
-        if (email && /@/.test(email) && isOrder) {
-          const { user, created } = await ensureMember(email, f['Buyer Name'], f['Buyer Phone']);
-          if (user) {
-            const oid = `ORD-AT-${rec.id.slice(3, 11).toUpperCase()}`;
-            let order = db.orders.find((o) => o.airtableId === rec.id || o.id === oid);
-            const collected = sel(f['Collection Status']) === 'Collected';
-            const type = sel(f['Order Type']);
-            const wantStatus = collected ? 'Collected' : (type === 'Purchase' ? 'Awaiting collection' : 'Reserved');
-            if (!order) {
-              order = { id: oid, airtableId: rec.id, userId: user.id, placed: (f['Order Date'] || rec.createdTime || '').slice(0, 10) || today(),
-                status: wantStatus, fulfilment: item.fulfilment === 'Available For Delivery' ? 'Delivery available — arrange with the team' : 'Collection — Material Reuse Group warehouse',
-                slot: collected ? 'Collected' : 'Slot to be confirmed — we’ll be in touch', items: [{ sku: item.sku, title: item.title, qty: item.quantity || 1, price: item.price || 0 }],
-                total: +((item.price || 0) * (item.quantity || 1)).toFixed(2), carbonSavedKg: +((item.carbonSavedKgPerUnit || 0) * (item.quantity || 1)).toFixed(1),
-                note: type === 'Deposit / Reserve' ? `Reserved via the online marketplace — ${ENV.DEPOSIT_PERCENT}% deposit paid, balance payable on collection` : 'Purchased via the online marketplace', source: 'airtable' };
-              if (type === 'Deposit / Reserve') { order.depositGBP = +(order.total * ENV.DEPOSIT_PERCENT / 100).toFixed(2); order.balanceDueGBP = +(order.total - order.depositGBP).toFixed(2); }
-              db.orders.unshift(order); ordChanged = true; status.ordersCreated++;
-            } else if (order.userId !== user.id) { order.userId = user.id; ordChanged = true; }
-            const slot = String(f['Collection Slot'] || '').trim();
-            if (slot && slot !== order.slot && slot !== order.slotFromPortal) { order.slot = slot; order.slotFromAirtable = slot; ordChanged = true; }
-            if (collected && order.status !== 'Collected') { order.status = 'Collected'; if (!slot) order.slot = 'Collected'; if (order.balanceDueGBP) { order.balancePaid = true; } ordChanged = true; }
-            else if (!collected && order.status !== wantStatus && !['Collected', 'Delivered'].includes(order.status)) { order.status = wantStatus; ordChanged = true; }
-            if (order.status === 'Collected' && !order.statsApplied) { order.syncedCollected = true; features.applyOrderStats(order); ordChanged = true; }
-            if (created) { /* welcome mail already sent by ensureMember */ }
-          }
+        if (email && /@/.test(email) && isOrder && !itemsWithOrderRows.has(rec.id)) {
+          const type = sel(f['Order Type']) || 'Purchase';
+          await upsertOrder({ oid: `ORD-AT-${rec.id.slice(3, 11).toUpperCase()}`, airtableId: rec.id, email, name: f['Buyer Name'], phone: f['Buyer Phone'],
+            placed: (f['Order Date'] || rec.createdTime || '').slice(0, 10) || today(), type, collectionStatus: sel(f['Collection Status']),
+            slot: String(f['Collection Slot'] || '').trim(), item, qty: item.quantity || 1, unitPrice: item.price || 0,
+            note: type === 'Deposit / Reserve' ? `Reserved via the online marketplace — ${ENV.DEPOSIT_PERCENT}% deposit paid, balance payable on collection` : 'Purchased via the online marketplace' });
         }
+      }
+
+      // ---- Orders table: every marketplace purchase / reservation, with its own quantity ----
+      for (const rec of orderRows) {
+        const f = rec.fields || {};
+        const email = String(f['Buyer Email'] || '').trim();
+        const itemAt = (f.Item || [])[0];
+        const item = itemAt && db.inventory.find((i) => i.airtableId === itemAt);
+        if (!email || !/@/.test(email) || !item) continue;
+        const type = sel(f['Order Type']) || 'Purchase';
+        const qty = Math.max(1, Math.round(num(f.Quantity, 1)));
+        await upsertOrder({ oid: `ORD-AT-${rec.id.slice(3, 11).toUpperCase()}`, airtableId: itemAt, airtableOrderId: rec.id, email, name: f['Buyer Name'], phone: f['Buyer Phone'],
+          placed: (f['Order Date'] || rec.createdTime || '').slice(0, 10) || today(), type, collectionStatus: sel(f['Collection Status']),
+          slot: String(f['Collection Slot'] || '').trim(), item, qty, unitPrice: num(f['Unit Price'], item.price || 0),
+          amountPaid: f['Amount Paid'] != null ? num(f['Amount Paid']) : null, balanceDue: f['Balance Due'] != null ? num(f['Balance Due']) : null,
+          note: type === 'Deposit / Reserve' ? 'Reserved via the online marketplace — deposit paid, balance payable on collection' : 'Purchased via the online marketplace' });
       }
       // items that vanished from Airtable are hidden from the warehouse (never deleted — orders reference them)
       db.inventory.forEach((i) => { const gone = !i.airtableId || !seen.has(i.airtableId); if (gone && !i.archived) { i.archived = true; invChanged = true; } else if (!gone && i.archived) { i.archived = false; invChanged = true; } });
@@ -255,22 +302,33 @@ module.exports = function install(ctx) {
   }
 
   // ---- write-backs from portal actions ----
-  async function reserveInAirtable(order, user) { // member reserved in the portal → mark in Airtable so Softr shows it
+  async function reserveInAirtable(order, user) { // member reserved in the portal → Orders row + stock reduced, so Softr and Kallie see it
+    if (!atOn) return;
     for (const l of order.items || []) {
       const item = db.inventory.find((i) => i.sku === l.sku);
       if (!item || !item.airtableId) continue;
-      const ok = await atPatch(item.airtableId, { Availability: 'Reserved', 'Buyer Name': user.name, 'Buyer Email': user.email, 'Buyer Phone': user.phone || '',
-        'Order Date': new Date().toISOString(), 'Order Type': 'Deposit / Reserve', 'Collection Status': 'Awaiting Collection' });
-      if (ok && !order.airtableId) { order.airtableId = item.airtableId; saveOrders(); }
+      const qty = Math.max(1, Math.round(num(l.qty, 1)));
+      const rowId = await atCreate({ 'Order ID': order.id, Item: [item.airtableId], 'Item Name': item.title, Quantity: qty, 'Unit Price': l.price || item.price || 0,
+        'Order Total': +((l.price || item.price || 0) * qty).toFixed(2), 'Amount Paid': 0, 'Balance Due': +((l.price || item.price || 0) * qty).toFixed(2),
+        'Order Type': 'Deposit / Reserve', 'Buyer Name': user.name, 'Buyer Email': user.email, 'Buyer Phone': user.phone || '',
+        'Order Date': new Date().toISOString(), 'Collection Status': 'Awaiting Collection', Source: 'Portal', Notes: 'Reserved in the member portal — no payment taken yet' });
+      if (rowId && !order.airtableOrderId) { order.airtableOrderId = rowId; order.airtableId = item.airtableId; saveOrders(); }
+      // reduce the live stock figure; only mark the listing Reserved when nothing is left
+      const live = await atGet(item.airtableId);
+      const inStock = live && live.fields && live.fields.Quantity != null ? Math.max(0, Math.round(num(live.fields.Quantity))) : (item.quantity || 1);
+      const remaining = Math.max(0, inStock - qty);
+      await atPatch(item.airtableId, remaining === 0 ? { Quantity: 0, Availability: 'Reserved' } : { Quantity: remaining });
     }
   }
+  // Which Airtable rows carry this order's collection details: its own Orders row, or (legacy) the item itself
+  const orderTargets = (order) => order.airtableOrderId
+    ? [{ id: order.airtableOrderId, table: ENV.AIRTABLE_ORDERS_TABLE }]
+    : [...new Set([order.airtableId, ...(order.items || []).map((l) => (db.inventory.find((i) => i.sku === l.sku) || {}).airtableId)].filter(Boolean))].map((id) => ({ id, table: ENV.AIRTABLE_TABLE }));
   async function slotInAirtable(order) { // admin typed/changed the slot in the portal → Airtable follows
-    const ids = new Set([order.airtableId, ...(order.items || []).map((l) => (db.inventory.find((i) => i.sku === l.sku) || {}).airtableId)].filter(Boolean));
-    for (const id of ids) await atPatch(id, { 'Collection Slot': order.slot || '' });
+    for (const t of orderTargets(order)) await atPatch(t.id, { 'Collection Slot': order.slot || '' }, t.table);
   }
   async function collectedInAirtable(order) { // admin marked collected in the portal → Airtable follows
-    const ids = new Set([order.airtableId, ...(order.items || []).map((l) => (db.inventory.find((i) => i.sku === l.sku) || {}).airtableId)].filter(Boolean));
-    for (const id of ids) await atPatch(id, { 'Collection Status': 'Collected', Availability: 'Sold' });
+    for (const t of orderTargets(order)) await atPatch(t.id, t.table === ENV.AIRTABLE_TABLE ? { 'Collection Status': 'Collected', Availability: 'Sold' } : { 'Collection Status': 'Collected' }, t.table);
   }
 
   // ---- wire hooks into the features module ----
