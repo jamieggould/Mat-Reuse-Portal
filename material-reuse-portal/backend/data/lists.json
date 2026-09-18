@@ -1,0 +1,68 @@
+{
+  "lists": [
+    {
+      "id": "L-101",
+      "userId": "u1",
+      "name": "Home office refresh",
+      "created": "2026-06-20",
+      "items": [
+        { "sku": "MR-0002", "qty": 4 },
+        { "sku": "MR-0005", "qty": 1 },
+        { "sku": "MR-0004", "qty": 1 }
+      ]
+    },
+    {
+      "id": "L-201",
+      "userId": "u2",
+      "name": "Bathroom refit",
+      "created": "2026-05-28",
+      "items": [
+        { "sku": "MR-0008", "qty": 1 },
+        { "sku": "MR-0009", "qty": 1 },
+        { "sku": "MR-0011", "qty": 1 }
+      ]
+    },
+    {
+      "id": "L-202",
+      "userId": "u2",
+      "name": "Garage storage",
+      "created": "2026-07-04",
+      "items": [
+        { "sku": "MR-0006", "qty": 1 },
+        { "sku": "MR-0001", "qty": 2 }
+      ]
+    },
+    {
+      "id": "L-301",
+      "userId": "u3",
+      "name": "Workshop refit — Copeland Park",
+      "created": "2026-06-14",
+      "items": [
+        { "sku": "MR-0012", "qty": 2 },
+        { "sku": "MR-0007", "qty": 1 },
+        { "sku": "MR-0016", "qty": 2 }
+      ]
+    },
+    {
+      "id": "L-302",
+      "userId": "u3",
+      "name": "Community hall makeover",
+      "created": "2026-07-09",
+      "items": [
+        { "sku": "MR-0003", "qty": 2 },
+        { "sku": "MR-0004", "qty": 1 }
+      ]
+    },
+    {
+      "id": "L-401",
+      "userId": "u4",
+      "name": "Angel Court L12 fit-out spec",
+      "created": "2026-07-02",
+      "items": [
+        { "sku": "MR-0010", "qty": 6 },
+        { "sku": "MR-0005", "qty": 4 },
+        { "sku": "MR-0006", "qty": 1 }
+      ]
+    }
+  ]
+}
