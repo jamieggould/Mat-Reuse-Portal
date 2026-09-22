@@ -1,0 +1,163 @@
+{
+  "_source": "Membership tiers. Public tiers (public: true) are shown on the sign-up page and the membership table; Community and Corporate are set by MRG admins only.",
+  "tiers": [
+    {
+      "id": "domestic-free",
+      "name": "Domestic Basic",
+      "price": 0,
+      "billing": "Annual",
+      "colour": "#E5FFCF",
+      "public": true,
+      "credit": 0,
+      "tagline": "Browse and buy from the Marketplace, join the wishlist, collect or arrange delivery.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Wishlist & stock alerts",
+        "Trusted Trade Teams",
+        "Delivery and Logistics",
+        "Material Reuse Hub assistant"
+      ],
+      "gates": {
+        "shoppingListLimit": 1,
+        "materialSourcing": true,
+        "carbonReports": false,
+        "projects": false,
+        "audits": false,
+        "accountManager": false,
+        "delivery": true,
+        "passports": false,
+        "documents": false,
+        "offerMaterials": false,
+        "impactCentre": false
+      }
+    },
+    {
+      "id": "domestic-standard",
+      "name": "Domestic Standard",
+      "price": 5,
+      "billing": "Annual",
+      "colour": "#C9F58C",
+      "public": true,
+      "credit": 100,
+      "tagline": "Everything in Basic plus £100 of materials each year.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Wishlist & stock alerts",
+        "Trusted Trade Teams",
+        "Delivery and Logistics",
+        "Material Reuse Hub assistant"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "materialSourcing": true,
+        "carbonReports": false,
+        "projects": false,
+        "audits": false,
+        "accountManager": false,
+        "delivery": true,
+        "passports": false,
+        "documents": false,
+        "offerMaterials": false,
+        "impactCentre": false
+      }
+    },
+    {
+      "id": "domestic-plus",
+      "name": "Domestic Plus",
+      "price": 500,
+      "billing": "Annual",
+      "colour": "#9EFF51",
+      "public": true,
+      "credit": 2500,
+      "tagline": "Everything in Basic plus £2,500 of materials each year.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Wishlist & stock alerts",
+        "Trusted Trade Teams",
+        "Delivery and Logistics",
+        "Material Reuse Hub assistant"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "materialSourcing": true,
+        "carbonReports": false,
+        "projects": false,
+        "audits": false,
+        "accountManager": false,
+        "delivery": true,
+        "passports": false,
+        "documents": false,
+        "offerMaterials": false,
+        "impactCentre": false
+      }
+    },
+    {
+      "id": "community",
+      "name": "Community Free Membership",
+      "price": 0,
+      "billing": "Annual",
+      "colour": "#FFED4D",
+      "public": false,
+      "credit": 0,
+      "tagline": "For community groups — materials are installed at your registered address.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Wishlist & stock alerts",
+        "Trusted Trade Teams",
+        "Delivery and Logistics",
+        "Material Reuse Hub assistant",
+        "Community Project Support"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "materialSourcing": true,
+        "carbonReports": "full",
+        "projects": true,
+        "audits": false,
+        "accountManager": false,
+        "delivery": true,
+        "passports": true,
+        "documents": true,
+        "offerMaterials": true,
+        "impactCentre": false,
+        "installEvidence": true
+      }
+    },
+    {
+      "id": "corporate-reuse-partner",
+      "name": "Corporate Reuse Partnership",
+      "price": 10000,
+      "billing": "Annual",
+      "colour": "#1653F3",
+      "public": false,
+      "credit": 0,
+      "tagline": "Full circular economy partnership — audits, ESG & carbon reporting and a dedicated account manager.",
+      "features": [
+        "Access to Reclaimed Materials",
+        "Wishlist & stock alerts",
+        "Trusted Trade Teams",
+        "Delivery and Logistics",
+        "Material Reuse Hub assistant",
+        "Community Project Support",
+        "Pre Refurbishment Audits",
+        "Circular Economy Reports",
+        "ESG and Carbon Reporting",
+        "Website Partner Listing",
+        "Dedicated Account Manager"
+      ],
+      "gates": {
+        "shoppingListLimit": null,
+        "materialSourcing": true,
+        "carbonReports": "verified",
+        "projects": true,
+        "audits": true,
+        "accountManager": true,
+        "delivery": true,
+        "passports": true,
+        "documents": true,
+        "offerMaterials": true,
+        "impactCentre": true
+      }
+    }
+  ]
+}
